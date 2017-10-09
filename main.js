@@ -25,11 +25,6 @@ function rgb(r, g, b) {
     return "rgb(" + r + "," + g + "," + b + ")";
 }
 
-function mod(num, mod) {
-    var remain = num % mod;
-    return Math.floor(remain >= 0 ? remain : remain + mod);
-}
-
 function randomMut(prev, step, max, prob) {
     var result = prev;
     if (Math.random() < prob) {
@@ -38,7 +33,7 @@ function randomMut(prev, step, max, prob) {
         } else {
             result -= randomInt(step);
         }
-        return mod(result, max);
+        return (result + step * max) % max;
     }
     return result;
 }
