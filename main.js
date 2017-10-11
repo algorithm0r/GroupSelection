@@ -1,20 +1,23 @@
 // GameBoard code below
 var params = {
-    mutRate: 0.05,
-    mutStep: 64,
+    mutRate: 0.05, //?
+    mutStep: 64, //?
     viewCountX: 30,
     viewCountY: 30,
     viewAgentSize: 24,
-    maxBreed: 8,
-    maxShare: 8,
+    maxBreed: 8, //?
+    maxShare: 8, //?
     maxDiff: 10000,
-    sharePercentModifier: 0.1,
+    sharePercentModifier: 0.1, ///
     popStart: 100,
     popMin: 1000,
     popMultiplier: 0.15,
     popDenominator: 2000,
     skipClock: true,
     clockStep: 0.1
+    //share with non-sharing agents??
+    //closest vs random?
+    //max generations? 10k
 }
 
 function randomInt(n) {
@@ -160,6 +163,8 @@ function Population(game) {
     this.agents = [];
     this.elapsed = 0;
     this.toggle = false;
+    this.popHistory = [];
+    this.popMax = 0;
 
     for (var i = 0; i < params.popStart; i++) {
         this.agents.push(new Agent(game, 0, 0));
@@ -261,6 +266,8 @@ Population.prototype.update = function () {
             }
             this.agents = offspring;
             console.log(this.agents.length);
+            this.popHistory.push(this.agents.length);
+            if(this.agents.length > this.popMax) this.popMax = this.agents.length;
         }
         this.toggle = !this.toggle;
     }
@@ -278,6 +285,7 @@ Population.prototype.draw = function (ctx) {
         //ctx.strokeStyle = "Black";
         //ctx.strokeRect(x * size, y * size, size / 2, size / 2);
 
+        //agent preview grid
         ctx.fillStyle = rgb(agent.color.r, agent.color.g, agent.color.b);
         ctx.fillRect(x * size, y * size, size, colorHeight);
         var length = agent.food / 2;
@@ -293,7 +301,34 @@ Population.prototype.draw = function (ctx) {
         ctx.fillStyle = "Black";
         ctx.fillRect(x * size, y * size + colorHeight + 3 * barHeight, length * size, barHeight);
     }
+
+    //population graph
+    graph(ctx, this.popHistory, this.popMax, 200, params.viewCountY * params.viewAgentSize + 10, 0, 400, 150, "purple");
+
 };
+
+function graph(ctx, arr, max, count, x, y, width, height, style) {
+    ctx.fillStyle = "#eeeeee";
+    ctx.fillRect(x, y, width, height);
+
+    ctx.fillStyle = "Black";
+    ctx.fillText("Current: " + arr[arr.length - 1] + " Max: " + max, x, y + 10);
+
+    ctx.strokeStyle = style;
+    var px = 0;
+    var step = width / count;
+    var startY = y + height;
+
+
+    var i = Math.max(0, arr.length - count); //display the last (max) events
+    ctx.moveTo(x, startY - arr[i]/height);
+    ctx.beginPath();
+    while(i < arr.length) {
+        ctx.lineTo(x + px++ * step, startY - arr[i]/(max/height));
+        i++;
+    }
+    ctx.stroke();
+}
 
 
 // the "main" code begins here
