@@ -12,7 +12,7 @@ var params = {
     popStart: 100,
     popMin: 1000,
     popMultiplier: 0.10,
-    popDenominator: 2000,
+    popDenominator: 1500,
     skipClock: true,
     clockStep: 0.1,
     breedClosest: true,
