@@ -15,8 +15,8 @@ var params = {
     popDenominator: 2000,
     skipClock: true,
     clockStep: 0.1,
-    breedClosest: true
-    //share with non-sharing agents??
+    breedClosest: true,
+    shareWithSelfish: false
     //max generations? 10k
 }
 
@@ -207,7 +207,7 @@ Population.prototype.update = function () {
                     for (var j = 0; j < this.agents.length; j++) {
                         if (i !== j) {
                             var other = this.agents[j];
-                            if (other.sharePercent > 0 && agent.difference(other) < agent.shareRange) {
+                            if ((other.sharePercent > 0 || params.shareWithSelfish) && agent.difference(other) < agent.shareRange) {
                                 partners.push(other);
                             }
                         }
