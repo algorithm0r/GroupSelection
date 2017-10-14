@@ -7,8 +7,8 @@ var params = {
     viewAgentSize: 24,
     maxBreed: 8, //?
     maxShare: 8, //?
-    maxDiff: 100,
-    sharePercentModifier: 0.1, ///
+    maxDiff: 1,
+    sharePercentModifier: 0.1, //?
     popStart: 100,
     popMin: 1000,
     popMultiplier: 0.10,
@@ -161,6 +161,8 @@ function Population(game) {
     this.elapsed = 0;
     this.toggle = false;
     this.popHistory = [];
+    this.avgShareHistory = [];
+    this.history = [];
     this.popMax = 0;
 
     for (var i = 0; i < params.popStart; i++) {
@@ -268,8 +270,16 @@ Population.prototype.update = function () {
                 }
             }
             this.agents = offspring;
+
+            //store and calculate population stats
             console.log(this.agents.length);
+            var avgSharePercent = 0;
+            for(var k = 0; k < this.agents.length; k++) {
+                avgSharePercent += this.agents[k].sharePercent;
+            }
+            this.avgShareHistory.push(avgSharePercent / this.agents.length);
             this.popHistory.push(this.agents.length);
+            this.history.push(this.agents);
             if(this.agents.length > this.popMax) this.popMax = this.agents.length;
         }
         this.toggle = !this.toggle;
@@ -309,9 +319,12 @@ Population.prototype.draw = function (ctx) {
     var startX = params.viewCountY * params.viewAgentSize + 10;
     graph(ctx, this.popHistory, this.popMax, 200, startX, 0, 400, 150, "purple");
 
+    //share graph
+    graph(ctx, this.avgShareHistory, 0.5, 200, startX, 160, 400, 150, "red");
+
     //paint colors
-    paintColorBG(ctx, startX, 160, 360, 100);
-    mapAgents(ctx, this.agents, startX, 160, 360, 100);
+    paintColorBG(ctx, startX, 320, 360, 100);
+    mapAgents(ctx, this.agents, startX, 320, 360, 100);
 
 };
 
@@ -348,7 +361,6 @@ function graph(ctx, arr, max, count, x, y, width, height, style) {
     var step = width / count;
     var startY = y + height;
 
-
     var i = Math.max(0, arr.length - count); //display the last (max) events
     ctx.moveTo(x, startY - arr[i]/height);
     ctx.beginPath();
@@ -372,7 +384,6 @@ ASSET_MANAGER.downloadAll(function () {
     console.log("starting up da sheild");
     var canvas = document.getElementById('gameWorld');
     var ctx = canvas.getContext('2d');
-
 
     var gameEngine = new GameEngine();
     var pop = new Population(gameEngine);
