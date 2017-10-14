@@ -14,9 +14,9 @@ var params = {
     popMultiplier: 0.10,
     popDenominator: 2000,
     skipClock: true,
-    clockStep: 0.1
+    clockStep: 0.1,
+    breedClosest: true
     //share with non-sharing agents??
-    //closest vs random?
     //max generations? 10k
 }
 
@@ -254,7 +254,13 @@ Population.prototype.update = function () {
                     offspring.push(newAgent);
                 } else {
                     //sexual
-                    var newAgent = new Agent(this.game, 0, 0, agent, partners[randomInt(partners.length)]);
+                    if(params.breedClosest) {
+                        //breeed with closest partner
+                        var newAgent = new Agent(this.game, 0, 0, agent, partner);
+                    } else {
+                        //breed with random possible
+                        var newAgent = new Agent(this.game, 0, 0, agent, partners[randomInt(partners.length)]);
+                    }
                     offspring.push(newAgent);
                 }
                 if(this.agents.length <= params.popMin || (Math.random() < (1.0 - params.popMultiplier * (this.agents.length) / params.popDenominator))) {
