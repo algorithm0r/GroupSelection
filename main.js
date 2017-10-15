@@ -7,16 +7,16 @@ var params = {
     viewAgentSize: 24,
     maxBreed: 8, //?
     maxShare: 8, //?
-    maxDiff: 10000,
-    sharePercentModifier: 0.1, ///
+    maxDiff: 1,
+    sharePercentModifier: 0.1, //?
     popStart: 100,
     popMin: 1000,
-    popMultiplier: 0.15,
-    popDenominator: 2000,
+    popMultiplier: 0.10,
+    popDenominator: 1500,
     skipClock: true,
-    clockStep: 0.1
-    //share with non-sharing agents??
-    //closest vs random?
+    clockStep: 0.1,
+    breedClosest: true,
+    shareWithSelfish: false
     //max generations? 10k
 }
 
@@ -24,8 +24,8 @@ function randomInt(n) {
     return Math.floor(Math.random() * n);
 }
 
-function rgb(r, g, b) {
-    return "rgb(" + r + "," + g + "," + b + ")";
+function hsl(h, s, l) {
+    return "hsl(" + h + "," + s + "%," + l + "%)";
 }
 
 function randomMut(prev, step, max, prob) {
@@ -53,7 +53,7 @@ function geneticMut(a, b) {
 }
 
 function Agent(game, x, y, mother, father) {
-    this.color = { r: 0, g: 0, b: 0 };
+    this.color = { h: 0, s: 0, l: 50 };
     if (mother && father) {
         // crossover
         //var trit = randomInt(3);
@@ -69,9 +69,8 @@ function Agent(game, x, y, mother, father) {
         //}
 
         // sexual reproduction
-        this.color.r = geneticMut(mother.color.r, father.color.r);
-        this.color.g = geneticMut(mother.color.g, father.color.g);
-        this.color.b = geneticMut(mother.color.b, father.color.b);
+        this.color.h = geneticMut(mother.color.h, father.color.h);
+        this.color.s = geneticMut(mother.color.s, father.color.s);
         this.breedRange = geneticMut(mother.breedRange, father.breedRange);
         this.shareRange = geneticMut(mother.shareRange, father.shareRange);
 
@@ -85,9 +84,8 @@ function Agent(game, x, y, mother, father) {
         }
 
         // mutation
-        this.color.r = randomMut(this.color.r, params.mutStep, 256, params.mutRate);
-        this.color.g = randomMut(this.color.g, params.mutStep, 256, params.mutRate);
-        this.color.b = randomMut(this.color.b, params.mutStep, 256, params.mutRate);
+        this.color.h = randomMut(this.color.h, params.mutStep, 360, params.mutRate);
+        this.color.s = randomMut(this.color.s, params.mutStep, 100, params.mutRate);
         this.breedRange = randomMut(this.breedRange, params.mutStep, params.maxBreed, params.mutRate);
         this.shareRange = randomMut(this.shareRange, params.mutStep, params.maxShare, params.mutRate);
 
@@ -104,9 +102,9 @@ function Agent(game, x, y, mother, father) {
     }
     else {
         this.color = {
-            r: randomInt(256),
-            g: randomInt(256),
-            b: randomInt(256)
+            h: randomInt(360),
+            s: randomInt(100),
+            l: 50
         };
 
         this.breedRange = randomInt(params.maxBreed);
@@ -153,10 +151,9 @@ Agent.prototype.draw = function (ctx, x, y) {
 }*/
 
 Agent.prototype.difference = function (agent) {
-    var r = Math.abs(agent.color.r - this.color.r);
-    var g = Math.abs(agent.color.g - this.color.g);
-    var b = Math.abs(agent.color.b - this.color.b);
-    return Math.sqrt(r*r + g*g + b*b);
+    var h = Math.abs(agent.color.h - this.color.h);
+    var s = Math.abs(agent.color.s - this.color.s);
+    return Math.sqrt(h*h - s*s);
 }
 
 function Population(game) {
@@ -164,6 +161,8 @@ function Population(game) {
     this.elapsed = 0;
     this.toggle = false;
     this.popHistory = [];
+    this.avgShareHistory = [];
+    this.history = [];
     this.popMax = 0;
 
     for (var i = 0; i < params.popStart; i++) {
@@ -208,7 +207,7 @@ Population.prototype.update = function () {
                     for (var j = 0; j < this.agents.length; j++) {
                         if (i !== j) {
                             var other = this.agents[j];
-                            if (other.sharePercent > 0 && agent.difference(other) < agent.shareRange) {
+                            if ((other.sharePercent > 0 || params.shareWithSelfish) && agent.difference(other) < agent.shareRange) {
                                 partners.push(other);
                             }
                         }
@@ -257,7 +256,13 @@ Population.prototype.update = function () {
                     offspring.push(newAgent);
                 } else {
                     //sexual
-                    var newAgent = new Agent(this.game, 0, 0, agent, partners[randomInt(partners.length)]);
+                    if(params.breedClosest) {
+                        //breeed with closest partner
+                        var newAgent = new Agent(this.game, 0, 0, agent, partner);
+                    } else {
+                        //breed with random possible
+                        var newAgent = new Agent(this.game, 0, 0, agent, partners[randomInt(partners.length)]);
+                    }
                     offspring.push(newAgent);
                 }
                 if(this.agents.length <= params.popMin || (Math.random() < (1.0 - params.popMultiplier * (this.agents.length) / params.popDenominator))) {
@@ -265,8 +270,16 @@ Population.prototype.update = function () {
                 }
             }
             this.agents = offspring;
+
+            //store and calculate population stats
             console.log(this.agents.length);
+            var avgSharePercent = 0;
+            for(var k = 0; k < this.agents.length; k++) {
+                avgSharePercent += this.agents[k].sharePercent;
+            }
+            this.avgShareHistory.push(avgSharePercent / this.agents.length);
             this.popHistory.push(this.agents.length);
+            this.history.push(this.agents);
             if(this.agents.length > this.popMax) this.popMax = this.agents.length;
         }
         this.toggle = !this.toggle;
@@ -286,7 +299,7 @@ Population.prototype.draw = function (ctx) {
         //ctx.strokeRect(x * size, y * size, size / 2, size / 2);
 
         //agent preview grid
-        ctx.fillStyle = rgb(agent.color.r, agent.color.g, agent.color.b);
+        ctx.fillStyle = hsl(agent.color.h, agent.color.s, agent.color.l);
         ctx.fillRect(x * size, y * size, size, colorHeight);
         var length = agent.food / 2;
         ctx.fillStyle = "Green";
@@ -303,9 +316,38 @@ Population.prototype.draw = function (ctx) {
     }
 
     //population graph
-    graph(ctx, this.popHistory, this.popMax, 200, params.viewCountY * params.viewAgentSize + 10, 0, 400, 150, "purple");
+    var startX = params.viewCountY * params.viewAgentSize + 10;
+    graph(ctx, this.popHistory, this.popMax, 200, startX, 0, 400, 150, "purple");
+
+    //share graph
+    graph(ctx, this.avgShareHistory, 0.5, 200, startX, 160, 400, 150, "red");
+
+    //paint colors
+    paintColorBG(ctx, startX, 320, 360, 100);
+    mapAgents(ctx, this.agents, startX, 320, 360, 100);
 
 };
+
+function mapAgents(ctx, agents, x, y, width, height) {
+    var pxX = Math.round(width/360);
+    var pxY = Math.round(height/100);
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+    for(var i = 0; i < agents.length; i++) {
+        ctx.fillRect(x + agents[i].color.h * pxX, y + agents[i].color.s * pxY, pxX * 2 , pxY* 2);
+    }
+}
+
+function paintColorBG(ctx, x, y, width, height) {
+    var pxX = Math.round(width/360);
+    var pxY = Math.round(height/100);
+    for(var i = 0; i < 360; i++) {
+        for(var j = 0; j < 100; j++) {
+            ctx.fillStyle = hsl(i, j, 50);
+            ctx.fillRect(x + i *pxX, y + j*pxY, pxX, pxY);
+        }
+    }
+}
 
 function graph(ctx, arr, max, count, x, y, width, height, style) {
     ctx.fillStyle = "#eeeeee";
@@ -318,7 +360,6 @@ function graph(ctx, arr, max, count, x, y, width, height, style) {
     var px = 0;
     var step = width / count;
     var startY = y + height;
-
 
     var i = Math.max(0, arr.length - count); //display the last (max) events
     ctx.moveTo(x, startY - arr[i]/height);
@@ -343,7 +384,6 @@ ASSET_MANAGER.downloadAll(function () {
     console.log("starting up da sheild");
     var canvas = document.getElementById('gameWorld');
     var ctx = canvas.getContext('2d');
-
 
     var gameEngine = new GameEngine();
     var pop = new Population(gameEngine);
