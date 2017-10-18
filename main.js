@@ -16,8 +16,8 @@ var params = {
     skipClock: true,
     clockStep: 0.1,
     breedClosest: true,
-    shareWithSelfish: false
-    //max generations? 10k
+    shareWithSelfish: false,
+    maxDays: 10000
 }
 
 function randomInt(n) {
@@ -164,6 +164,7 @@ function Population(game) {
     this.avgShareHistory = [];
     this.history = [];
     this.popMax = 0;
+    this.days = 0;
 
     for (var i = 0; i < params.popStart; i++) {
         this.agents.push(new Agent(game, 0, 0));
@@ -182,12 +183,23 @@ Population.prototype.forage = function(){
 }
 
 Population.prototype.update = function () {
+    //wait for clock if enabled
     var advance = params.skipClock;
     this.elapsed += this.game.clockTick;
     if (this.elapsed > params.clockStep) {
         advance = true;
         this.elapsed -= params.clockStep;
     }
+
+    //limit to max number of generations
+    if(this.days++ > params.maxDays  || this.agents.length === 0) {
+        console.log("Creating new population");
+
+        this.removeFromWorld = true;
+        var pop = new Population(this.game);
+        this.game.addEntity(pop);
+    }
+
     // feed
     if (advance) {
         //for (var i = 0; i < this.agents.length; i++) {
