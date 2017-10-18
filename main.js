@@ -17,7 +17,8 @@ var params = {
     clockStep: 0.1,
     breedClosest: true,
     shareWithSelfish: false,
-    maxDays: 10000
+    maxDays: 10000,
+    graphDays: 200
 }
 
 function randomInt(n) {
@@ -329,10 +330,10 @@ Population.prototype.draw = function (ctx) {
 
     //population graph
     var startX = params.viewCountY * params.viewAgentSize + 10;
-    graph(ctx, this.popHistory, this.popMax, 200, startX, 0, 400, 150, "purple");
+    graph(ctx, this.popHistory, this.popMax, params.graphDays, startX, 0, 360, 150, "purple");
 
     //share graph
-    graph(ctx, this.avgShareHistory, 0.5, 200, startX, 160, 400, 150, "red");
+    graph(ctx, this.avgShareHistory, 0.25, params.graphDays, startX, 160, 360, 150, "red");
 
     //paint colors
     paintColorBG(ctx, startX, 320, 360, 100);
@@ -366,7 +367,12 @@ function graph(ctx, arr, max, count, x, y, width, height, style) {
     ctx.fillRect(x, y, width, height);
 
     ctx.fillStyle = "Black";
-    ctx.fillText("Current: " + arr[arr.length - 1] + " Max: " + max, x, y + 10);
+    if(arr.length > 0) {
+        var current = parseFloat(arr[arr.length - 1].toFixed(4));
+    } else {
+        var current = 0;
+    }
+    ctx.fillText("Current: " + current + " Max: " + max, x, y + 10);
 
     ctx.strokeStyle = style;
     var px = 0;
