@@ -7,11 +7,10 @@
 
 #controls {
     float: left;
-    //max-width: 300px
 }
 
 .params {
-    width: 300px;
+    width: auto;
     border: 2px solid grey;
     margin: auto;
     font-family: Arial;
