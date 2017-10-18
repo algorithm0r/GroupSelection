@@ -1,25 +1,4 @@
 // GameBoard code below
-var params = {
-    mutRate: 0.05, //?
-    mutStep: 64, //?
-    viewCountX: 30,
-    viewCountY: 30,
-    viewAgentSize: 24,
-    maxBreed: 8, //?
-    maxShare: 8, //?
-    maxDiff: 1,
-    sharePercentModifier: 0.1, //?
-    popStart: 100,
-    popMin: 1000,
-    popMultiplier: 0.10,
-    popDenominator: 1500,
-    skipClock: true,
-    clockStep: 0.1,
-    breedClosest: true,
-    shareWithSelfish: false,
-    maxDays: 10000,
-    graphDays: 200
-}
 
 function randomInt(n) {
     return Math.floor(Math.random() * n);
@@ -53,7 +32,7 @@ function geneticMut(a, b) {
     }
 }
 
-function Agent(game, x, y, mother, father) {
+function Agent(game, x, y, params, mother, father) {
     this.color = { h: 0, s: 0, l: 50 };
     if (mother && father) {
         // crossover
@@ -157,7 +136,8 @@ Agent.prototype.difference = function (agent) {
     return Math.sqrt(h*h - s*s);
 }
 
-function Population(game) {
+function Population(game, params) {
+    this.params = params;
     this.agents = [];
     this.elapsed = 0;
     this.toggle = false;
@@ -167,8 +147,8 @@ function Population(game) {
     this.popMax = 0;
     this.days = 0;
 
-    for (var i = 0; i < params.popStart; i++) {
-        this.agents.push(new Agent(game, 0, 0));
+    for (var i = 0; i < this.params.popStart; i++) {
+        this.agents.push(new Agent(game, 0, 0, this.params));
     }
 
     Entity.call(this, game, 0, 0);
@@ -185,15 +165,15 @@ Population.prototype.forage = function(){
 
 Population.prototype.update = function () {
     //wait for clock if enabled
-    var advance = params.skipClock;
+    var advance = this.params.skipClock;
     this.elapsed += this.game.clockTick;
-    if (this.elapsed > params.clockStep) {
+    if (this.elapsed > this.params.clockStep) {
         advance = true;
-        this.elapsed -= params.clockStep;
+        this.elapsed -= this.params.clockStep;
     }
 
     //limit to max number of generations
-    if(this.days++ > params.maxDays  || this.agents.length === 0) {
+    if(this.days++ > this.params.maxDays  || this.agents.length === 0) {
         console.log("Creating new population");
 
         this.removeFromWorld = true;
@@ -220,7 +200,7 @@ Population.prototype.update = function () {
                     for (var j = 0; j < this.agents.length; j++) {
                         if (i !== j) {
                             var other = this.agents[j];
-                            if ((other.sharePercent > 0 || params.shareWithSelfish) && agent.difference(other) < agent.shareRange) {
+                            if ((other.sharePercent > 0 || this.params.shareWithSelfish) && agent.difference(other) < agent.shareRange) {
                                 partners.push(other);
                             }
                         }
@@ -249,7 +229,7 @@ Population.prototype.update = function () {
                 var agent = breeders[i];
                 var bred = false;
                 var partner = null;
-                var diff = params.maxDiff;
+                var diff = this.params.maxDiff;
 
                 for (var j = 0; j < breeders.length; j++) {
                     if (i !== j) {
@@ -265,20 +245,20 @@ Population.prototype.update = function () {
                 }
                 if (!partner) {
                     //asexual
-                    var newAgent = new Agent(this.game, 0, 0, agent, agent);
+                    var newAgent = new Agent(this.game, 0, 0, this.params, agent, agent);
                     offspring.push(newAgent);
                 } else {
                     //sexual
-                    if(params.breedClosest) {
+                    if(this.params.breedClosest) {
                         //breeed with closest partner
-                        var newAgent = new Agent(this.game, 0, 0, agent, partner);
+                        var newAgent = new Agent(this.game, 0, 0, this.params, agent, partner, this.params);
                     } else {
                         //breed with random possible
-                        var newAgent = new Agent(this.game, 0, 0, agent, partners[randomInt(partners.length)]);
+                        var newAgent = new Agent(this.game, 0, 0, this.params, agent, partners[randomInt(partners.length)]);
                     }
                     offspring.push(newAgent);
                 }
-                if(this.agents.length <= params.popMin || (Math.random() < (1.0 - params.popMultiplier * (this.agents.length) / params.popDenominator))) {
+                if(this.agents.length <= this.params.popMin || (Math.random() < (1.0 - this.params.popMultiplier * (this.agents.length) / this.params.popDenominator))) {
                     offspring.push(agent);
                 }
             }
@@ -300,12 +280,12 @@ Population.prototype.update = function () {
 };
 
 Population.prototype.draw = function (ctx) {
-    for (var i = 0; i < Math.min((params.viewCountX * params.viewCountY), this.agents.length); i++) {
-        var x = i % params.viewCountX;
-        var y = Math.floor(i / params.viewCountY);
+    for (var i = 0; i < Math.min((this.params.viewCountX * this.params.viewCountY), this.agents.length); i++) {
+        var x = i % this.params.viewCountX;
+        var y = Math.floor(i / this.params.viewCountY);
         var agent = this.agents[i];
         //agent.draw(ctx, x, y);
-        var size = params.viewAgentSize;
+        var size = this.params.viewAgentSize;
         var colorHeight = size / 2;
         var barHeight = size / 8;
         //ctx.strokeStyle = "Black";
@@ -317,10 +297,10 @@ Population.prototype.draw = function (ctx) {
         var length = agent.food / 2;
         ctx.fillStyle = "Green";
         ctx.fillRect(x * size, y * size + colorHeight, length * size, barHeight);
-        length = agent.breedRange / params.maxBreed;
+        length = agent.breedRange / this.params.maxBreed;
         ctx.fillStyle = "Red";
         ctx.fillRect(x * size, y * size + colorHeight + barHeight, length * size, barHeight);
-        length = agent.shareRange / params.maxShare;
+        length = agent.shareRange /this.params.maxShare;
         ctx.fillStyle = "Blue";
         ctx.fillRect(x * size, y * size + colorHeight + 2 * barHeight, length * size, barHeight);
         length = agent.sharePercent;
@@ -329,11 +309,11 @@ Population.prototype.draw = function (ctx) {
     }
 
     //population graph
-    var startX = params.viewCountY * params.viewAgentSize + 10;
-    graph(ctx, this.popHistory, this.popMax, params.graphDays, startX, 0, 360, 150, "purple");
+    var startX = this.params.viewCountY * this.params.viewAgentSize + 10;
+    graph(ctx, this.popHistory, this.popMax, this.params.graphDays, startX, 0, 360, 150, "purple");
 
     //share graph
-    graph(ctx, this.avgShareHistory, 0.25, params.graphDays, startX, 160, 360, 150, "red");
+    graph(ctx, this.avgShareHistory, 0.25, this.params.graphDays, startX, 160, 360, 150, "red");
 
     //paint colors
     paintColorBG(ctx, startX, 320, 360, 100);
@@ -403,8 +383,31 @@ ASSET_MANAGER.downloadAll(function () {
     var canvas = document.getElementById('gameWorld');
     var ctx = canvas.getContext('2d');
 
+    var params = {
+        mutRate: 0.05, //?
+        mutStep: 64, //?
+        viewCountX: 30,
+        viewCountY: 30,
+        viewAgentSize: 24,
+        maxBreed: 8, //?
+        maxShare: 8, //?
+        maxDiff: 1,
+        sharePercentModifier: 0.1, //?
+        popStart: 100,
+        popMin: 1000,
+        popMultiplier: 0.10,
+        popDenominator: 1500,
+        skipClock: true,
+        clockStep: 0.1,
+        breedClosest: true,
+        shareWithSelfish: false,
+        maxDays: 10000,
+        graphDays: 200
+    }
+
+
     var gameEngine = new GameEngine();
-    var pop = new Population(gameEngine);
+    var pop = new Population(gameEngine, params);
     gameEngine.addEntity(pop);
     gameEngine.init(ctx);
     gameEngine.start();
