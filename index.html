@@ -3,7 +3,8 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>WebGo</title>
+    <title>Group Selection</title>
+    <link type="text/css" rel="stylesheet" href="./style.css">
     <script type="text/javascript" src="./assetmanager.js"></script>
     <script type="text/javascript" src="./gameengine.js"></script>
     <script type="text/javascript" src="./main.js"></script>
@@ -12,5 +13,39 @@
     <div>Right click and "Inspect Element".  Select the Console Tab to see the debugger output.</div>
 
     <canvas id="gameWorld" width="1200" height="800" style="border: 1px solid white; background: white"></canvas>
+
+    <div id="controls">
+        <div id="pop" class="params">
+            <p>Population Parameters</p>
+            <input type="text" id="mutStep" value="64" />Mutation Step<br />
+            <input type="text" id="mutRate" value="0.05" />Mutation Rate<br />
+            <input type="text" id="popStart" value="100" />Initial Population<br />
+            <input type="text" id="popMin" value="1000" />Initial Population<br />
+            <input type="text" id="popMultiplier" value="0.10" />Population Mult<br />
+            <input type="text" id="popDenominator" value="1500" />Population Denom<br />
+            <input type="text" id="maxBreed" value="8"/>Max Share<br />
+            <input type="text" id="maxShare" value="8"/>Max Breed<br />
+            <input type="text" id="maxDiff" value="1"/>Max Difference<br />
+            <input type="text" id="sharePercentModifier" value="0.1" />Share Percent Mod<br />
+            <input type="checkbox" id="breedClosest" checked />Breed with closest<br />
+            <input type="checkbox" id="shareWithSelfish" />Share with selfish<br />
+        </div>
+        <div id="view" class="params">
+            <p>View Parameters</p>
+            <input type="text" id="viewCountX" value="30" />Display Count X<br />
+            <input type="text" id="viewCountY" value="30" />Display Count Y<br />
+            <input type="text" id="viewAgentSize" value="24" />Agent Size<br />
+            <input type="text" id="graphDays" value="200" />Graph Length<br />
+            <input type="text" id="clockStep" value="0.1" />Clock Step<br />
+            <input type="checkbox" id="skipClock" checked />Skip Clock<br />
+        </div>
+        <div id="log" class="params">
+            <p>Data Logging</p>
+            <input type="text" id="maxDays" value="10000" />Run Length<br />
+            <!--<input type="checkbox" id="download"/>Download <br />-->
+        </div><br />
+        <div class="button" id="restart">Restart with Parameters</div><br />
+        <div class="button" id="play">>/||</div>
+    </div>
 </body>
 </html>
