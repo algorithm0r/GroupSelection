@@ -112,9 +112,11 @@ function Population(game, params) {
     this.elapsed = 0;
     this.toggle = false;
     this.popHistory = [];
-    this.shareMinHistory = [];
+    this.sharePercMinHistory = [];
+    this.sharePercAvgHistory = [];
+    this.sharePercMaxHistory = [];
+    this.breedAvgHistory = [];
     this.shareAvgHistory = [];
-    this.shareMaxHistory = [];
     this.shareMax = 0;
     this.history = [];
     this.popMax = 0;
@@ -250,9 +252,13 @@ Population.prototype.saveStats = function () {
     var avgSharePercent = 0;
     var minSharePercent = 100;
     var maxSharePercent = 0;
+    var avgBreed = 0;
+    var avgShare = 0;
     for(var k = 0; k < this.agents.length; k++) {
         //avg
         avgSharePercent += this.agents[k].sharePercent;
+        avgBreed += this.agents[k].breedRange;
+        avgShare += this.agents[k].shareRange;
 
         //min
         if(this.agents[k].sharePercent < minSharePercent) {
@@ -268,9 +274,11 @@ Population.prototype.saveStats = function () {
         }
     }
 
-    this.shareAvgHistory.push(avgSharePercent / this.agents.length);
-    this.shareMinHistory.push(minSharePercent);
-    this.shareMaxHistory.push(maxSharePercent);
+    this.sharePercAvgHistory.push(avgSharePercent / this.agents.length);
+    this.sharePercMinHistory.push(minSharePercent);
+    this.sharePercMaxHistory.push(maxSharePercent);
+    this.breedAvgHistory.push(avgBreed / this.agents.length);
+    this.shareAvgHistory.push(avgShare / this.agents.length);
 
     //this.history.push(this.agents);
 
@@ -317,18 +325,32 @@ Population.prototype.draw = function (ctx) {
     ctx.fillRect(startX, 0, gWidth, gHeight);
     graph(ctx, this.popHistory, this.popMax, this.params.graphDays, startX, startY, gWidth, gHeight, "purple", "Current");
 
-    //share graph
+    //share percent graph
     startY = 160;
     ctx.fillStyle = "#eeeeee";
     ctx.fillRect(startX, startY, gWidth, gHeight);
-    graph(ctx, this.shareMinHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "pink");
-    graph(ctx, this.shareAvgHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "red", "Average");
-    graph(ctx, this.shareMaxHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "pink");
+    graph(ctx, this.sharePercMinHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "lightgreen");
+    graph(ctx, this.sharePercAvgHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "green", "Average");
+    graph(ctx, this.sharePercMaxHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "lightgreen");
+
+    //share/breed range graph
+    startY = 320;
+    ctx.fillStyle = "#eeeeee";
+    ctx.fillRect(startX, startY, gWidth, gHeight);
+    graph(ctx, this.shareAvgHistory, this.params.maxShare, this.params.graphDays, startX, startY, gWidth, gHeight, "blue", "Share Average");
+    graph(ctx, this.breedAvgHistory, this.params.maxBreed, this.params.graphDays, startX, startY, gWidth, gHeight, "red", "                                                            Breed Average");
 
     //color graph
+    startY = 480;
     var hsl_img=ASSET_MANAGER.getAsset("./img/hsl.png");
-    ctx.drawImage(hsl_img, startX, 320, 360, 100);
-    mapAgents(ctx, this.agents, startX, 320, 360, 100);
+    ctx.drawImage(hsl_img, startX, startY, gWidth, 100);
+    mapAgents(ctx, this.agents, startX, startY, gWidth, 100);
+
+    //text info
+    startY = 600;
+    ctx.fillStyle = "Black";
+    ctx.fillText("Day: " + this.days + "/" + this.params.maxDays, startX, startY);
+
 
 };
 
@@ -345,8 +367,8 @@ function mapAgents(ctx, agents, x, y, width, height) {
 function graph(ctx, arr, max, count, x, y, width, height, style, text) {
     if(text && arr.length > 0) {
         ctx.fillStyle = "Black";
-        var current = parseFloat(arr[arr.length - 1].toFixed(4));
-        ctx.fillText(text + ": " + current + " Max: " + parseFloat(max.toFixed(4)), x, y + 10);
+        var current = parseFloat(arr[arr.length - 1].toFixed(3));
+        ctx.fillText(text + ": " + current + " Max: " + parseFloat(max.toFixed(3)), x, y + 10);
     }
 
     ctx.strokeStyle = style;
