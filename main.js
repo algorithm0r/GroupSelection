@@ -112,7 +112,10 @@ function Population(game, params) {
     this.elapsed = 0;
     this.toggle = false;
     this.popHistory = [];
-    this.avgShareHistory = [];
+    this.shareMinHistory = [];
+    this.shareAvgHistory = [];
+    this.shareMaxHistory = [];
+    this.shareMax = 0;
     this.history = [];
     this.popMax = 0;
     this.days = 0;
@@ -235,36 +238,60 @@ Population.prototype.update = function () {
                     }
                 }
                 this.agents = offspring;
-
-                //store and calculate population stats
-                console.log(this.agents.length);
-                var avgSharePercent = 0;
-                for(var k = 0; k < this.agents.length; k++) {
-                    avgSharePercent += this.agents[k].sharePercent;
-                }
-                this.avgShareHistory.push(avgSharePercent / this.agents.length);
-                this.popHistory.push(this.agents.length);
-                this.history.push(this.agents);
-                if(this.agents.length > this.popMax) this.popMax = this.agents.length;
+                this.saveStats();
             }
             this.toggle = !this.toggle;
         }
     }
 };
 
+//store and calculate population stats
+Population.prototype.saveStats = function () {
+    var avgSharePercent = 0;
+    var minSharePercent = 100;
+    var maxSharePercent = 0;
+    for(var k = 0; k < this.agents.length; k++) {
+        //avg
+        avgSharePercent += this.agents[k].sharePercent;
+
+        //min
+        if(this.agents[k].sharePercent < minSharePercent) {
+            minSharePercent = this.agents[k].sharePercent;
+        }
+
+        //max
+        if(this.agents[k].sharePercent > maxSharePercent) {
+            maxSharePercent = this.agents[k].sharePercent;
+            if(maxSharePercent > this.shareMax) {
+                this.shareMax = maxSharePercent;
+            }
+        }
+    }
+
+    this.shareAvgHistory.push(avgSharePercent / this.agents.length);
+    this.shareMinHistory.push(minSharePercent);
+    this.shareMaxHistory.push(maxSharePercent);
+
+    //this.history.push(this.agents);
+
+    this.popHistory.push(this.agents.length);
+    if(this.agents.length > this.popMax) {
+        this.popMax = this.agents.length;
+    }
+    console.log(this.agents.length);
+
+}
+
 Population.prototype.draw = function (ctx) {
+    //agent preview grid
     for (var i = 0; i < Math.min((this.params.viewCountX * this.params.viewCountY), this.agents.length); i++) {
         var x = i % this.params.viewCountX;
         var y = Math.floor(i / this.params.viewCountY);
         var agent = this.agents[i];
-        //agent.draw(ctx, x, y);
         var size = this.params.viewAgentSize;
         var colorHeight = size / 2;
         var barHeight = size / 8;
-        //ctx.strokeStyle = "Black";
-        //ctx.strokeRect(x * size, y * size, size / 2, size / 2);
 
-        //agent preview grid
         ctx.fillStyle = hsl(agent.color.h, agent.color.s, agent.color.l);
         ctx.fillRect(x * size, y * size, size, colorHeight);
         var length = agent.food / 2;
@@ -283,12 +310,22 @@ Population.prototype.draw = function (ctx) {
 
     //population graph
     var startX = this.params.viewCountY * this.params.viewAgentSize + 10;
-    graph(ctx, this.popHistory, this.popMax, this.params.graphDays, startX, 0, 360, 150, "purple");
+    var startY = 0;
+    var gHeight = 150;
+    var gWidth = 360;
+    ctx.fillStyle = "#eeeeee";
+    ctx.fillRect(startX, 0, gWidth, gHeight);
+    graph(ctx, this.popHistory, this.popMax, this.params.graphDays, startX, startY, gWidth, gHeight, "purple", "Current");
 
     //share graph
-    graph(ctx, this.avgShareHistory, 0.25, this.params.graphDays, startX, 160, 360, 150, "red");
+    startY = 160;
+    ctx.fillStyle = "#eeeeee";
+    ctx.fillRect(startX, startY, gWidth, gHeight);
+    graph(ctx, this.shareMinHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "pink");
+    graph(ctx, this.shareAvgHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "red", "Average");
+    graph(ctx, this.shareMaxHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "pink");
 
-    //paint colors
+    //color graph
     var hsl_img=ASSET_MANAGER.getAsset("./img/hsl.png");
     ctx.drawImage(hsl_img, startX, 320, 360, 100);
     mapAgents(ctx, this.agents, startX, 320, 360, 100);
@@ -305,17 +342,12 @@ function mapAgents(ctx, agents, x, y, width, height) {
     }
 }
 
-function graph(ctx, arr, max, count, x, y, width, height, style) {
-    ctx.fillStyle = "#eeeeee";
-    ctx.fillRect(x, y, width, height);
-
-    ctx.fillStyle = "Black";
-    if(arr.length > 0) {
+function graph(ctx, arr, max, count, x, y, width, height, style, text) {
+    if(text && arr.length > 0) {
+        ctx.fillStyle = "Black";
         var current = parseFloat(arr[arr.length - 1].toFixed(4));
-    } else {
-        var current = 0;
+        ctx.fillText(text + ": " + current + " Max: " + parseFloat(max.toFixed(4)), x, y + 10);
     }
-    ctx.fillText("Current: " + current + " Max: " + max, x, y + 10);
 
     ctx.strokeStyle = style;
     var px = 0;
@@ -331,7 +363,6 @@ function graph(ctx, arr, max, count, x, y, width, height, style) {
     }
     ctx.stroke();
 }
-
 
 // the "main" code begins here
 
@@ -386,7 +417,6 @@ ASSET_MANAGER.downloadAll(function () {
     };
 
     newPop();
-    //gameEngine.addEntity(pop);
     gameEngine.init(ctx);
     gameEngine.start();
 });
