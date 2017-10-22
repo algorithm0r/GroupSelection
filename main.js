@@ -289,7 +289,8 @@ Population.prototype.draw = function (ctx) {
     graph(ctx, this.avgShareHistory, 0.25, this.params.graphDays, startX, 160, 360, 150, "red");
 
     //paint colors
-    paintColorBG(ctx, startX, 320, 360, 100);
+    var hsl_img=ASSET_MANAGER.getAsset("./img/hsl.png");
+    ctx.drawImage(hsl_img, startX, 320, 360, 100);
     mapAgents(ctx, this.agents, startX, 320, 360, 100);
 
 };
@@ -301,17 +302,6 @@ function mapAgents(ctx, agents, x, y, width, height) {
     ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
     for(var i = 0; i < agents.length; i++) {
         ctx.fillRect(x + agents[i].color.h * pxX, y + agents[i].color.s * pxY, pxX * 2 , pxY* 2);
-    }
-}
-
-function paintColorBG(ctx, x, y, width, height) {
-    var pxX = Math.round(width/360);
-    var pxY = Math.round(height/100);
-    for(var i = 0; i < 360; i++) {
-        for(var j = 0; j < 100; j++) {
-            ctx.fillStyle = hsl(i, j, 50);
-            ctx.fillRect(x + i *pxX, y + j*pxY, pxX, pxY);
-        }
     }
 }
 
@@ -346,10 +336,7 @@ function graph(ctx, arr, max, count, x, y, width, height, style) {
 // the "main" code begins here
 
 var ASSET_MANAGER = new AssetManager();
-
-ASSET_MANAGER.queueDownload("./img/960px-Blank_Go_board.png");
-ASSET_MANAGER.queueDownload("./img/black.png");
-ASSET_MANAGER.queueDownload("./img/white.png");
+ASSET_MANAGER.queueDownload("./img/hsl.png");
 
 ASSET_MANAGER.downloadAll(function () {
     console.log("starting up da sheild");
