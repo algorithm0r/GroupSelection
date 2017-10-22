@@ -133,8 +133,12 @@ Population.prototype = new Entity();
 Population.prototype.constructor = Population;
 
 Population.prototype.forage = function(){
-    var val = (Math.random()+Math.random()+Math.random()+Math.random()+Math.random()+Math.random()+Math.random()+Math.random())/4;
-    //var val = Math.random() * 2;
+    var val;
+    if(this.params.uniformForage) {
+        val = Math.random() * 2;
+    } else {
+        var val = (Math.random()+Math.random()+Math.random()+Math.random()+Math.random()+Math.random()+Math.random()+Math.random())/4;
+    }
     return val;
 }
 
@@ -422,6 +426,7 @@ ASSET_MANAGER.downloadAll(function () {
         params.shareWithSelfish = document.getElementById('shareWithSelfish').checked;
         params.maxDays = parseInt(document.getElementById('maxDays').value);
         params.graphDays = parseInt(document.getElementById('graphDays').value);
+        params.uniformForage = document.getElementById('uniformForage').checked;
 
         pop = new Population(gameEngine, params);
         gameEngine.addEntity(pop);
