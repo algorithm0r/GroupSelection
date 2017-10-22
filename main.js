@@ -1,5 +1,14 @@
 // GameBoard code below
 
+function download(filename, data) {
+    var pom = document.createElement('a');
+    var blob = new Blob([data], {type:"octet/stream"});
+    var url = window.URL.createObjectURL(blob);
+    pom.setAttribute('href', url);
+    pom.setAttribute('download', filename);
+    pom.click();
+}
+
 function randomInt(n) {
     return Math.floor(Math.random() * n);
 }
@@ -118,7 +127,7 @@ function Population(game, params) {
     this.breedAvgHistory = [];
     this.shareAvgHistory = [];
     this.shareMax = 0;
-    this.history = [];
+    this.completeHistory = [];
     this.popMax = 0;
     this.days = 0;
 
@@ -154,7 +163,16 @@ Population.prototype.update = function () {
         }
 
         //limit to max number of generations
-        if(this.days++ > this.params.maxDays  || this.agents.length === 0) {
+        if(this.days > this.params.maxDays  || this.agents.length === 0) {
+            console.log("Simulation complete after " + this.days + "/" + this.params.maxDays + " days");
+
+            if(this.params.download) {
+                download(this.params.runName + ".csv", this.serialize());
+                if(this.params.storeAll) {
+                    var dto = {completeHistory: this.completeHistory};
+                    download(this.params.runName + "-all.json", JSON.stringify(dto));
+                }
+            }
             console.log("Creating new population");
 
             this.removeFromWorld = true;
@@ -164,11 +182,8 @@ Population.prototype.update = function () {
 
         // feed
         if (advance) {
-            //for (var i = 0; i < this.agents.length; i++) {
-            //    var agent = this.agents[i];
-            //    console.log(i + ": r " + agent.color.r + " g " + agent.color.g + " b " + agent.color.b);
-            //}
             if (!this.toggle) {
+                this.days++;
                 for (var i = 0; i < this.agents.length; i++) {
                     var agent = this.agents[i];
                     agent.food = this.forage();
@@ -258,6 +273,7 @@ Population.prototype.saveStats = function () {
     var maxSharePercent = 0;
     var avgBreed = 0;
     var avgShare = 0;
+    var flatAgents = [];
     for(var k = 0; k < this.agents.length; k++) {
         //avg
         avgSharePercent += this.agents[k].sharePercent;
@@ -276,6 +292,17 @@ Population.prototype.saveStats = function () {
                 this.shareMax = maxSharePercent;
             }
         }
+
+        //store all
+        if(this.params.storeAll) {
+            flatAgents.push({
+                cH: this.agents[k].color.h,
+                cS: this.agents[k].color.s,
+                sP: this.agents[k].sharePercent,
+                sR: this.agents[k].shareRange,
+                bR: this.agents[k].breedRange
+            })
+        }
     }
 
     this.sharePercAvgHistory.push(avgSharePercent / this.agents.length);
@@ -284,14 +311,32 @@ Population.prototype.saveStats = function () {
     this.breedAvgHistory.push(avgBreed / this.agents.length);
     this.shareAvgHistory.push(avgShare / this.agents.length);
 
-    //this.history.push(this.agents);
-
     this.popHistory.push(this.agents.length);
     if(this.agents.length > this.popMax) {
         this.popMax = this.agents.length;
     }
     console.log(this.agents.length);
 
+    if(this.params.storeAll) {
+        this.completeHistory.push(flatAgents);
+    }
+}
+
+Population.prototype.serialize = function () {
+    var text = JSON.stringify(this.params);
+
+    text += "\ntick,pop,sharePercentAvg,sharePercentMin,sharePercentMax,breedAvg,shareAvg\n";
+    for(var i = 0; i < this.popHistory.length; i++) {
+        text += i + ",";
+        text += this.popHistory[i] + ",";
+        text += this.sharePercAvgHistory[i] + ",";
+        text += this.sharePercMinHistory[i] + ",";
+        text += this.sharePercMaxHistory[i] + ",";
+        text += this.breedAvgHistory[i] + ",";
+        text += this.shareAvgHistory[i] + "\n";
+    }
+
+    return text;
 }
 
 Population.prototype.draw = function (ctx) {
@@ -378,13 +423,14 @@ function graph(ctx, arr, max, count, x, y, width, height, style, text) {
     ctx.strokeStyle = style;
     var px = 0;
     var step = width / count;
+    var range = max/height;
     var startY = y + height;
 
     var i = Math.max(0, arr.length - count); //display the last (max) events
     ctx.moveTo(x, startY - arr[i]/height);
     ctx.beginPath();
     while(i < arr.length) {
-        ctx.lineTo(x + px++ * step, startY - arr[i]/(max/height));
+        ctx.lineTo(x + px++ * step, startY - arr[i]/range);
         i++;
     }
     ctx.stroke();
@@ -427,6 +473,10 @@ ASSET_MANAGER.downloadAll(function () {
         params.maxDays = parseInt(document.getElementById('maxDays').value);
         params.graphDays = parseInt(document.getElementById('graphDays').value);
         params.uniformForage = document.getElementById('uniformForage').checked;
+        params.runName = document.getElementById('runName').value;
+        params.download = document.getElementById('download').checked;
+        params.storeAll = document.getElementById('storeAll').checked;
+
 
         pop = new Population(gameEngine, params);
         gameEngine.addEntity(pop);
