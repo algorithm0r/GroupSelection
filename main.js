@@ -225,7 +225,7 @@ Population.prototype.update = function () {
                     var agent = breeders[i];
                     var bred = false;
                     var partner = null;
-                    var diff = this.params.maxDiff;
+                    var diff = Number.MAX_SAFE_INTEGER;
 
                     for (var j = 0; j < breeders.length; j++) {
                         if (i !== j) {
@@ -460,7 +460,6 @@ ASSET_MANAGER.downloadAll(function () {
         params.viewAgentSize = parseInt(document.getElementById('viewAgentSize').value);
         params.maxBreed = parseInt(document.getElementById('maxBreed').value);
         params.maxShare = parseInt(document.getElementById('maxShare').value);
-        params.maxDiff = parseInt(document.getElementById('maxDiff').value);
         params.sharePercentModifier = parseFloat(document.getElementById('sharePercentModifier').value);
         params.popStart = parseInt(document.getElementById('popStart').value);
         params.popMin = parseInt(document.getElementById('popMin').value);
