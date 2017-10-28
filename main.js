@@ -60,8 +60,13 @@ function Agent(game, x, y, params, mother, father) {
         // sexual reproduction
         this.color.h = geneticMut(mother.color.h, father.color.h);
         this.color.s = geneticMut(mother.color.s, father.color.s);
-        this.breedRange = geneticMut(mother.breedRange, father.breedRange);
-        this.shareRange = geneticMut(mother.shareRange, father.shareRange);
+        if(params.mutateRanges) {
+            this.breedRange = geneticMut(mother.breedRange, father.breedRange);
+            this.shareRange = geneticMut(mother.shareRange, father.shareRange);
+        } else {
+            this.breedRange = params.maxBreed;
+            this.shareRange = params.maxShare;
+        }
 
         var trit = randomInt(3);
         if (trit === 0) {
@@ -75,8 +80,11 @@ function Agent(game, x, y, params, mother, father) {
         // mutation
         this.color.h = randomMut(this.color.h, params.mutStep, 360, params.mutRate);
         this.color.s = randomMut(this.color.s, params.mutStep, 100, params.mutRate);
-        this.breedRange = randomMut(this.breedRange, params.mutStep, params.maxBreed, params.mutRate);
-        this.shareRange = randomMut(this.shareRange, params.mutStep, params.maxShare, params.mutRate);
+
+        if(params.mutateRanges) {
+            this.breedRange = randomMut(this.breedRange, params.mutStep, params.maxBreed, params.mutRate);
+            this.shareRange = randomMut(this.shareRange, params.mutStep, params.maxShare, params.mutRate);
+        }
 
         if (Math.random() < params.mutRate) {
             //this.sharePercent = randomInt(2);
@@ -96,8 +104,14 @@ function Agent(game, x, y, params, mother, father) {
             l: 50
         };
 
-        this.breedRange = randomInt(params.maxBreed);
-        this.shareRange = randomInt(params.maxShare);
+        if(params.mutateRanges) {
+            this.breedRange = randomInt(params.maxBreed);
+            this.shareRange = randomInt(params.maxShare);
+        } else {
+            this.breedRange = params.maxBreed;
+            this.shareRange = params.maxShare;
+        }
+        
         this.sharePercent = 0;
     }
 
@@ -112,7 +126,7 @@ Agent.prototype.constructor = Agent;
 Agent.prototype.difference = function (agent) {
     var h = Math.abs(agent.color.h - this.color.h);
     var s = Math.abs(agent.color.s - this.color.s);
-    return Math.sqrt(h*h - s*s);
+    return Math.sqrt(h*h + s*s);
 }
 
 function Population(game, params) {
@@ -225,7 +239,7 @@ Population.prototype.update = function () {
                     var agent = breeders[i];
                     var bred = false;
                     var partner = null;
-                    var diff = this.params.maxDiff;
+                    var diff = Number.MAX_SAFE_INTEGER;
 
                     for (var j = 0; j < breeders.length; j++) {
                         if (i !== j) {
@@ -460,7 +474,6 @@ ASSET_MANAGER.downloadAll(function () {
         params.viewAgentSize = parseInt(document.getElementById('viewAgentSize').value);
         params.maxBreed = parseInt(document.getElementById('maxBreed').value);
         params.maxShare = parseInt(document.getElementById('maxShare').value);
-        params.maxDiff = parseInt(document.getElementById('maxDiff').value);
         params.sharePercentModifier = parseFloat(document.getElementById('sharePercentModifier').value);
         params.popStart = parseInt(document.getElementById('popStart').value);
         params.popMin = parseInt(document.getElementById('popMin').value);
@@ -470,13 +483,13 @@ ASSET_MANAGER.downloadAll(function () {
         params.clockStep = parseFloat(document.getElementById('clockStep').value);
         params.breedClosest = document.getElementById('breedClosest').checked;
         params.shareWithSelfish = document.getElementById('shareWithSelfish').checked;
+        params.mutateRanges = document.getElementById('mutateRanges').checked;
         params.maxDays = parseInt(document.getElementById('maxDays').value);
         params.graphDays = parseInt(document.getElementById('graphDays').value);
         params.uniformForage = document.getElementById('uniformForage').checked;
         params.runName = document.getElementById('runName').value;
         params.download = document.getElementById('download').checked;
         params.storeAll = document.getElementById('storeAll').checked;
-
 
         pop = new Population(gameEngine, params);
         gameEngine.addEntity(pop);
