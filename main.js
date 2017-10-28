@@ -112,7 +112,7 @@ Agent.prototype.constructor = Agent;
 Agent.prototype.difference = function (agent) {
     var h = Math.abs(agent.color.h - this.color.h);
     var s = Math.abs(agent.color.s - this.color.s);
-    return Math.sqrt(h*h - s*s);
+    return Math.sqrt(h*h + s*s);
 }
 
 function Population(game, params) {
@@ -476,7 +476,6 @@ ASSET_MANAGER.downloadAll(function () {
         params.runName = document.getElementById('runName').value;
         params.download = document.getElementById('download').checked;
         params.storeAll = document.getElementById('storeAll').checked;
-
 
         pop = new Population(gameEngine, params);
         gameEngine.addEntity(pop);
