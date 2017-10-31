@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <title>Group Selection</title>
     <link type="text/css" rel="stylesheet" href="./style.css">
+    <script type="text/javascript" src="http://24.16.255.56:8888/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="./assetmanager.js"></script>
     <script type="text/javascript" src="./gameengine.js"></script>
     <script type="text/javascript" src="./main.js"></script>
@@ -17,6 +18,7 @@
     <div id="controls">
         <div id="pop" class="params">
             <p>Population Parameters</p>
+            <input type="text" id="popId" value="" style="font-family: 'Courier New', Courier, monospace;" disabled/>ID<br />
             <input type="text" id="mutStep" value="64" />Mutation Step<br />
             <input type="text" id="mutRate" value="0.05" />Mutation Rate<br />
             <input type="text" id="popStart" value="100" />Initial Population<br />
@@ -46,6 +48,7 @@
             <input type="text" id="runName" value="groupselection" />Run name <br />
             <input type="checkbox" id="storeAll"/>Save all agents (!)<br />
             <input type="checkbox" id="download"/>Download<br />
+            <input type="checkbox" id="sendToDB"/>Store in DB<br />
         </div><br />
         <div class="button" id="restart">Save &amp; Restart</div><br />
         <div class="button" id="play">>/||</div>

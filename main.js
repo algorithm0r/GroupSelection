@@ -41,6 +41,16 @@ function geneticMut(a, b) {
     }
 }
 
+function randomString(length) {
+  var text = "";
+  var possible = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+  for (var i = 0; i < length; i++)
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+  return text;
+}
+
 function Agent(game, x, y, params, mother, father) {
     this.color = { h: 0, s: 0, l: 50 };
     if (mother && father) {
@@ -111,7 +121,7 @@ function Agent(game, x, y, params, mother, father) {
             this.breedRange = params.maxBreed;
             this.shareRange = params.maxShare;
         }
-        
+
         this.sharePercent = 0;
     }
 
@@ -130,6 +140,7 @@ Agent.prototype.difference = function (agent) {
 }
 
 function Population(game, params) {
+    this.id = randomString(10);
     this.params = params;
     this.agents = [];
     this.elapsed = 0;
@@ -143,12 +154,14 @@ function Population(game, params) {
     this.shareMax = 0;
     this.completeHistory = [];
     this.popMax = 0;
-    this.days = 0;
+    this.day = 0;
 
     for (var i = 0; i < this.params.popStart; i++) {
         this.agents.push(new Agent(game, 0, 0, this.params));
     }
 
+    document.getElementById('popId').value = this.id;
+    console.log("New Population: " + this.id);
     Entity.call(this, game, 0, 0);
 };
 
@@ -177,8 +190,24 @@ Population.prototype.update = function () {
         }
 
         //limit to max number of generations
-        if(this.days > this.params.maxDays  || this.agents.length === 0) {
-            console.log("Simulation complete after " + this.days + "/" + this.params.maxDays + " days");
+        if(this.day > this.params.maxDays  || this.agents.length === 0) {
+            console.log("Simulation complete after " + this.day + "/" + this.params.maxDays + " days");
+
+            if(socket && this.params.sendToDB) {
+                var runStats = {
+                    studentname: "Simon DeMartini",
+                    statename: this.id,
+                    params: this.params,
+                    sharePercentsAvg: this.sharePercAvgHistory,
+                    sharePercentsMin: this.sharePercMinHistory,
+                    sharePercentsMax: this.sharePercMaxHistory,
+                    breedAvg: this.breedAvgHistory,
+                    shareAvg: this.shareAvgHistory,
+                }
+                socket.emit("save", runStats);
+                socket.emit("load", {studentname: "Simon DeMartini", statename: this.id});
+                console.log("Sent to DB");
+            }
 
             if(this.params.download) {
                 download(this.params.runName + ".csv", this.serialize());
@@ -197,7 +226,7 @@ Population.prototype.update = function () {
         // feed
         if (advance) {
             if (!this.toggle) {
-                this.days++;
+                this.day++;
                 for (var i = 0; i < this.agents.length; i++) {
                     var agent = this.agents[i];
                     agent.food = this.forage();
@@ -333,6 +362,15 @@ Population.prototype.saveStats = function () {
 
     if(this.params.storeAll) {
         this.completeHistory.push(flatAgents);
+        if(socket && this.params.sendToDB) {
+            var agentsData = {
+                id: this.id,
+                day: this.day,
+                params: this.params,
+                agents: flatAgent
+            }
+            socket.emit("somekey-agents", agentsData)
+        }
     }
 }
 
@@ -409,12 +447,10 @@ Population.prototype.draw = function (ctx) {
     ctx.drawImage(hsl_img, startX, startY, gWidth, 100);
     mapAgents(ctx, this.agents, startX, startY, gWidth, 100);
 
-    //text info
+    //text info.day
     startY = 600;
     ctx.fillStyle = "Black";
-    ctx.fillText("Day: " + this.days + "/" + this.params.maxDays, startX, startY);
-
-
+    ctx.fillText("Day: " + this.day + "/" + this.params.maxDays, startX, startY);
 };
 
 function mapAgents(ctx, agents, x, y, width, height) {
@@ -454,6 +490,11 @@ function graph(ctx, arr, max, count, x, y, width, height, style, text) {
 
 var ASSET_MANAGER = new AssetManager();
 ASSET_MANAGER.queueDownload("./img/hsl.png");
+var socket = null;
+if (window.io !== undefined) {
+    console.log("Database connected!");
+    socket = io.connect('http://24.16.255.56:8888');
+}
 
 ASSET_MANAGER.downloadAll(function () {
     console.log("starting up da sheild");
@@ -490,6 +531,7 @@ ASSET_MANAGER.downloadAll(function () {
         params.runName = document.getElementById('runName').value;
         params.download = document.getElementById('download').checked;
         params.storeAll = document.getElementById('storeAll').checked;
+        params.sendToDB = document.getElementById('sendToDB').checked;
 
         pop = new Population(gameEngine, params);
         gameEngine.addEntity(pop);
@@ -505,6 +547,10 @@ ASSET_MANAGER.downloadAll(function () {
         params.pause = false;
         newPop();
     };
+
+    if(socket) socket.on("load", function (data) {
+        console.log(JSON.stringify(data) + " loaded from db");
+    });
 
     newPop();
     gameEngine.init(ctx);
