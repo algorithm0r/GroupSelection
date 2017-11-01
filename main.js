@@ -41,6 +41,16 @@ function geneticMut(a, b) {
     }
 }
 
+function randomString(length) {
+    var text = "";
+    var possible = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+    for (var i = 0; i < length; i++)
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+}
+
 function Agent(game, x, y, params, mother, father) {
     this.color = { h: 0, s: 0, l: 50 };
     if (mother && father) {
@@ -111,7 +121,7 @@ function Agent(game, x, y, params, mother, father) {
             this.breedRange = params.maxBreed;
             this.shareRange = params.maxShare;
         }
-        
+
         this.sharePercent = 0;
     }
 
@@ -130,6 +140,7 @@ Agent.prototype.difference = function (agent) {
 }
 
 function Population(game, params) {
+    this.id = randomString(10);
     this.params = params;
     this.agents = [];
     this.elapsed = 0;
@@ -143,12 +154,14 @@ function Population(game, params) {
     this.shareMax = 0;
     this.completeHistory = [];
     this.popMax = 0;
-    this.days = 0;
+    this.day = 0;
 
     for (var i = 0; i < this.params.popStart; i++) {
         this.agents.push(new Agent(game, 0, 0, this.params));
     }
 
+    document.getElementById('popId').value = this.id;
+    console.log("New Population: " + this.id);
     Entity.call(this, game, 0, 0);
 };
 
@@ -177,14 +190,22 @@ Population.prototype.update = function () {
         }
 
         //limit to max number of generations
-        if(this.days > this.params.maxDays  || this.agents.length === 0) {
-            console.log("Simulation complete after " + this.days + "/" + this.params.maxDays + " days");
+        if(this.day > this.params.maxDays  || this.agents.length === 0) {
+            console.log("Simulation complete after " + this.day + "/" + this.params.maxDays + " days");
 
             if(this.params.download) {
-                download(this.params.runName + ".csv", this.serialize());
+                var filename = this.params.runName + "-" + this.id;
+
+                download(filename + "-stats.csv", this.serialize(1));
+                download(filename + "-params.json", JSON.stringify(this.params));
+
+                if(this.params.sampleDays > 1) {
+                    download(filename + "-sample.csv", this.serialize(this.params.sampleDays));
+                }
+
                 if(this.params.storeAll) {
                     var dto = {completeHistory: this.completeHistory};
-                    download(this.params.runName + "-all.json", JSON.stringify(dto));
+                    download(filename + "-all.json", JSON.stringify(dto));
                 }
             }
             console.log("Creating new population");
@@ -197,7 +218,7 @@ Population.prototype.update = function () {
         // feed
         if (advance) {
             if (!this.toggle) {
-                this.days++;
+                this.day++;
                 for (var i = 0; i < this.agents.length; i++) {
                     var agent = this.agents[i];
                     agent.food = this.forage();
@@ -336,18 +357,17 @@ Population.prototype.saveStats = function () {
     }
 }
 
-Population.prototype.serialize = function () {
-    var text = JSON.stringify(this.params);
-
-    text += "\ntick,pop,sharePercentAvg,sharePercentMin,sharePercentMax,breedAvg,shareAvg\n";
-    for(var i = 0; i < this.popHistory.length; i++) {
+Population.prototype.serialize = function (skip) {
+    var text = "tick,popCount,sharePercentAvg,sharePercentMin,sharePercentMax,breedAvg,shareAvg,popId\n";
+    for(var i = 0; i < this.popHistory.length; i += skip) {
         text += i + ",";
         text += this.popHistory[i] + ",";
         text += this.sharePercAvgHistory[i] + ",";
         text += this.sharePercMinHistory[i] + ",";
         text += this.sharePercMaxHistory[i] + ",";
         text += this.breedAvgHistory[i] + ",";
-        text += this.shareAvgHistory[i] + "\n";
+        text += this.shareAvgHistory[i] + ",";
+        text += this.id + "\n";
     }
 
     return text;
@@ -412,7 +432,7 @@ Population.prototype.draw = function (ctx) {
     //text info
     startY = 600;
     ctx.fillStyle = "Black";
-    ctx.fillText("Day: " + this.days + "/" + this.params.maxDays, startX, startY);
+    ctx.fillText("Day: " + this.day + "/" + this.params.maxDays, startX, startY);
 
 
 };
@@ -488,6 +508,7 @@ ASSET_MANAGER.downloadAll(function () {
         params.graphDays = parseInt(document.getElementById('graphDays').value);
         params.uniformForage = document.getElementById('uniformForage').checked;
         params.runName = document.getElementById('runName').value;
+        params.sampleDays = parseInt(document.getElementById('sampleDays').value);
         params.download = document.getElementById('download').checked;
         params.storeAll = document.getElementById('storeAll').checked;
 
