@@ -41,16 +41,6 @@ function geneticMut(a, b) {
     }
 }
 
-function randomString(length) {
-    var text = "";
-    var possible = "abcdefghijklmnopqrstuvwxyz0123456789";
-
-    for (var i = 0; i < length; i++)
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-    return text;
-}
-
 function median(arr) {
     var middle = Math.floor(arr.length / 2);
     if(middle % 2 == 1) {
@@ -174,8 +164,9 @@ Agent.prototype.difference = function (agent) {
     return Math.sqrt(h*h + s*s);
 }
 
-function Population(game, params) {
-    this.id = randomString(10);
+function Population(game, params, id, dataGroup) {
+    this.id = id;
+    this.dataGroup = dataGroup;
     this.params = params;
     this.agents = [];
     this.elapsed = 0;
@@ -199,7 +190,6 @@ function Population(game, params) {
         this.agents.push(new Agent(game, 0, 0, this.params));
     }
 
-    document.getElementById('popId').value = this.id;
     console.log("New Population: " + this.id);
     Entity.call(this, game, 0, 0);
 };
@@ -234,17 +224,18 @@ Population.prototype.update = function () {
 
             if(socket && this.params.sendToDB) {
                 var runStats = {
-                    studentname: "Simon DeMartini",
-                    statename: this.id,
+                    dataGroup: this.dataGroup,
+                    popId: this.id,
                     params: this.params,
                     sharePercentsAvg: this.sharePercAvgHistory,
                     sharePercentsMin: this.sharePercMinHistory,
                     sharePercentsMax: this.sharePercMaxHistory,
+                    sharePercentsStd: this.sharePercStdHistory,
+                    sharePercentsMed: this.sharePercMedHistory,
                     breedAvg: this.breedAvgHistory,
-                    shareAvg: this.shareAvgHistory,
+                    shareAvg: this.shareAvgHistory
                 }
-                socket.emit("save", runStats);
-                socket.emit("load", {studentname: "Simon DeMartini", statename: this.id});
+                socket.emit("saveGS", runStats);
                 console.log("Sent to DB");
             }
 
@@ -266,8 +257,7 @@ Population.prototype.update = function () {
             console.log("Creating new population");
 
             this.removeFromWorld = true;
-            var pop = new Population(this.game, this.params);
-            this.game.addEntity(pop);
+            newPopulation();
         }
 
         // feed
@@ -431,16 +421,17 @@ Population.prototype.storeAll = function () {
         });
 
         this.completeHistory.push(flatAgents);
-        
+
+        /**
         if(socket && this.params.sendToDB) {
             var agentsData = {
-                id: this.id,
+                id: this.id,emit
                 day: this.day,
                 params: this.params,
                 agents: flatAgent
             }
             socket.emit("saveGS", agentsData)
-        }
+        }*/
     }
 }
 
@@ -561,7 +552,6 @@ function graph(ctx, arr, max, count, x, y, width, height, style, text) {
 }
 
 // the "main" code begins here
-
 var ASSET_MANAGER = new AssetManager();
 ASSET_MANAGER.queueDownload("./img/hsl.png");
 var socket = null;
@@ -570,6 +560,8 @@ if (window.io !== undefined) {
     socket = io.connect('http://24.16.255.56:8888');
 }
 
+var newPopulation;
+
 ASSET_MANAGER.downloadAll(function () {
     console.log("starting up da sheild");
     var canvas = document.getElementById('gameWorld');
@@ -577,55 +569,29 @@ ASSET_MANAGER.downloadAll(function () {
     var restart = document.getElementById('restart');
     var ctx = canvas.getContext('2d');
     var gameEngine = new GameEngine();
-
-    var params = {};
+    var expManager = new ExperimentManager();
     var pop;
 
     var newPop = function() {
-        params.mutRate = parseFloat(document.getElementById('mutRate').value);
-        params.mutStep =  parseInt(document.getElementById('mutStep').value);
-        params.viewCountX = parseInt(document.getElementById('viewCountX').value);
-        params.viewCountY = parseInt(document.getElementById('viewCountY').value);
-        params.viewAgentSize = parseInt(document.getElementById('viewAgentSize').value);
-        params.maxBreed = parseInt(document.getElementById('maxBreed').value);
-        params.maxShare = parseInt(document.getElementById('maxShare').value);
-        params.sharePercentModifier = parseFloat(document.getElementById('sharePercentModifier').value);
-        params.popStart = parseInt(document.getElementById('popStart').value);
-        params.popMin = parseInt(document.getElementById('popMin').value);
-        params.popMultiplier = parseFloat(document.getElementById('popMultiplier').value);
-        params.popDenominator = parseInt(document.getElementById('popDenominator').value);
-        params.skipClock = document.getElementById('skipClock').checked;
-        params.clockStep = parseFloat(document.getElementById('clockStep').value);
-        params.breedClosest = document.getElementById('breedClosest').checked;
-        params.shareWithSelfish = document.getElementById('shareWithSelfish').checked;
-        params.mutateRanges = document.getElementById('mutateRanges').checked;
-        params.maxDays = parseInt(document.getElementById('maxDays').value);
-        params.graphDays = parseInt(document.getElementById('graphDays').value);
-        params.uniformForage = document.getElementById('uniformForage').checked;
-        params.runName = document.getElementById('runName').value;
-        params.sampleDays = parseInt(document.getElementById('sampleDays').value);
-        params.download = document.getElementById('download').checked;
-        params.storeAll = document.getElementById('storeAll').checked;
-        params.sendToDB = document.getElementById('sendToDB').checked;
-
-        pop = new Population(gameEngine, params);
+        pop = new Population(
+            gameEngine,
+            expManager.nextParams(),
+            expManager.nextPopId(),
+            expManager.dataGroup
+        );
         gameEngine.addEntity(pop);
     }
+    newPopulation = newPop;
 
-    params.pause = false;
     play.onclick = function () {
-        params.pause = !params.pause;
+        pop.params.pause = !pop.params.pause;
     };
 
     restart.onclick = function () {
         if (gameEngine.entities.length === 1) gameEngine.entities.splice(0, 1);
-        params.pause = false;
+        pop.params.pause = false;
         newPop();
     };
-
-    if(socket) socket.on("load", function (data) {
-        console.log(JSON.stringify(data) + " loaded from db");
-    });
 
     newPop();
     gameEngine.init(ctx);
