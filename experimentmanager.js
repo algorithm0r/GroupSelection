@@ -3,15 +3,16 @@ var DEFAULT_PARAMS = {
     maxShare: 8,
     mutStep: 64,
     mutRate: 0.05,
-    popDenominator: 500,
-    popMin: 500,
-    popMultiplier: 0.1,
-    popStart: 100,
     sharePercentModifier: 0.1,
     breedClosest: true,
     shareWithSelfish: false,
     uniformForage: false,
     mutateRanges: false,
+
+    popDenominator: 400,
+    popMin: 400,
+    popMultiplier: 0.1,
+    popStart: 100,
 
     graphDays: 200,
     viewAgentSize: 24,
@@ -20,7 +21,7 @@ var DEFAULT_PARAMS = {
     clockStep: 0.1,
     skipClock: true,
 
-    maxDays: 10000,
+    maxDays: 5000,
     runName: "gs-default",
     sendToDB: true,
     download: true,
@@ -48,16 +49,16 @@ function ExperimentManager() {
     tests[1].maxBreed = 64;
     tests[1].maxShare = 64;
 
-    tests[1].runName = "highShare"
+    tests[2].runName = "highShare"
     tests[2].maxBreed = 8;
     tests[2].maxShare = 64;
 
-    tests[1].runName = "highBreed"
+    tests[3].runName = "highBreed"
     tests[3].maxBreed = 64;
     tests[3].maxShare = 8;
 
     //keep tests as an empty array if you want to play around with settings in UI
-    this.tests = tests;
+    this.tests = [];
     this.updateUI(DEFAULT_PARAMS);
 
 }
@@ -70,7 +71,7 @@ ExperimentManager.prototype.nextParams = function () {
         this.currentTest = this.run % this.tests.length;
         newParams = this.tests[this.currentTest];
 
-        if(this.run >= (this.maxRuns * this.tests.length) + 1 ) {
+        if(this.run > (this.maxRuns * this.tests.length) - 1 ) {
             newParams.pause = true;
         }
     }
