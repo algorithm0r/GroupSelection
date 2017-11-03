@@ -48,11 +48,11 @@ function ExperimentManager() {
     tests[1].maxBreed = 64;
     tests[1].maxShare = 64;
 
-    tests[1].runName = "highShare"
+    tests[2].runName = "highShare"
     tests[2].maxBreed = 8;
     tests[2].maxShare = 64;
 
-    tests[1].runName = "highBreed"
+    tests[3].runName = "highBreed"
     tests[3].maxBreed = 64;
     tests[3].maxShare = 8;
 
