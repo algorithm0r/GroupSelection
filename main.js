@@ -42,13 +42,48 @@ function geneticMut(a, b) {
 }
 
 function randomString(length) {
-  var text = "";
-  var possible = "abcdefghijklmnopqrstuvwxyz0123456789";
+    var text = "";
+    var possible = "abcdefghijklmnopqrstuvwxyz0123456789";
 
-  for (var i = 0; i < length; i++)
+    for (var i = 0; i < length; i++)
     text += possible.charAt(Math.floor(Math.random() * possible.length));
 
-  return text;
+    return text;
+}
+
+function median(arr) {
+    var middle = Math.floor(arr.length / 2);
+    if(middle % 2 == 1) {
+        //odd length
+        return arr[Math.floor(arr.length / 2)];
+    } else {
+        //even length
+        return (arr[middle] + arr[middle - 1]) / 2;
+    }
+}
+
+function standardDeviation(values){
+  var avg = average(values);
+
+  var squareDiffs = values.map(function(value){
+    var diff = value - avg;
+    var sqrDiff = diff * diff;
+    return sqrDiff;
+  });
+
+  var avgSquareDiff = average(squareDiffs);
+
+  var stdDev = Math.sqrt(avgSquareDiff);
+  return stdDev;
+}
+
+function average(data){
+  var sum = data.reduce(function(sum, value){
+    return sum + value;
+  }, 0);
+
+  var avg = sum / data.length;
+  return avg;
 }
 
 function Agent(game, x, y, params, mother, father) {
@@ -148,7 +183,11 @@ function Population(game, params) {
     this.popHistory = [];
     this.sharePercMinHistory = [];
     this.sharePercAvgHistory = [];
+    this.sharePercMedHistory = [];
+    this.sharePercStdHistory = [];
     this.sharePercMaxHistory = [];
+    this.sharePercStdUpper = [];
+    this.sharePercStdLower = [];
     this.breedAvgHistory = [];
     this.shareAvgHistory = [];
     this.shareMax = 0;
@@ -210,10 +249,18 @@ Population.prototype.update = function () {
             }
 
             if(this.params.download) {
-                download(this.params.runName + ".csv", this.serialize());
+                var filename = this.params.runName + "-" + this.id;
+
+                download(filename + "-stats.csv", this.serialize(1));
+                download(filename + "-params.json", JSON.stringify(this.params));
+
+                if(this.params.sampleDays > 1) {
+                    download(filename + "-sample.csv", this.serialize(this.params.sampleDays));
+                }
+
                 if(this.params.storeAll) {
                     var dto = {completeHistory: this.completeHistory};
-                    download(this.params.runName + "-all.json", JSON.stringify(dto));
+                    download(filename + "-all.json", JSON.stringify(dto));
                 }
             }
             console.log("Creating new population");
@@ -303,6 +350,7 @@ Population.prototype.update = function () {
                 }
                 this.agents = offspring;
                 this.saveStats();
+                if(this.params.storeAll) this.storeAll();
             }
             this.toggle = !this.toggle;
         }
@@ -311,57 +359,79 @@ Population.prototype.update = function () {
 
 //store and calculate population stats
 Population.prototype.saveStats = function () {
+    var popCount = this.agents.length;
     var avgSharePercent = 0;
     var minSharePercent = 100;
     var maxSharePercent = 0;
+    var medSharePercent = 0;
+    var stdSharePercent = 0;
     var avgBreed = 0;
     var avgShare = 0;
-    var flatAgents = [];
-    for(var k = 0; k < this.agents.length; k++) {
-        //avg
+
+    if(popCount > this.popMax) {
+        this.popMax = popCount;
+    }
+
+    //sorted array of share percents
+    var spArr = this.agents.map(function(agent) {
+        return agent.sharePercent;
+    });
+    spArr.sort();
+
+    //min
+    minSharePercent = spArr[0];
+
+    //max
+    maxSharePercent = spArr[popCount - 1];
+    if(maxSharePercent > this.shareMax) {
+        this.shareMax = maxSharePercent;
+    }
+
+    //median
+    medSharePercent = median(spArr);
+
+    //avg
+    for(var k = 0; k < popCount; k++) {
         avgSharePercent += this.agents[k].sharePercent;
         avgBreed += this.agents[k].breedRange;
         avgShare += this.agents[k].shareRange;
-
-        //min
-        if(this.agents[k].sharePercent < minSharePercent) {
-            minSharePercent = this.agents[k].sharePercent;
-        }
-
-        //max
-        if(this.agents[k].sharePercent > maxSharePercent) {
-            maxSharePercent = this.agents[k].sharePercent;
-            if(maxSharePercent > this.shareMax) {
-                this.shareMax = maxSharePercent;
-            }
-        }
-
-        //store all
-        if(this.params.storeAll) {
-            flatAgents.push({
-                cH: this.agents[k].color.h,
-                cS: this.agents[k].color.s,
-                sP: this.agents[k].sharePercent,
-                sR: this.agents[k].shareRange,
-                bR: this.agents[k].breedRange
-            })
-        }
     }
+    avgSharePercent = avgSharePercent / popCount;
+    avgBreed = avgBreed / popCount;
+    avgShare = avgShare / popCount;
 
-    this.sharePercAvgHistory.push(avgSharePercent / this.agents.length);
+    //standard deviaton
+    stdSharePercent = standardDeviation(spArr);
+
+    this.sharePercAvgHistory.push(avgSharePercent);
     this.sharePercMinHistory.push(minSharePercent);
     this.sharePercMaxHistory.push(maxSharePercent);
-    this.breedAvgHistory.push(avgBreed / this.agents.length);
-    this.shareAvgHistory.push(avgShare / this.agents.length);
+    this.sharePercMedHistory.push(medSharePercent);
+    this.sharePercStdHistory.push(stdSharePercent);
+    this.sharePercStdUpper.push(avgSharePercent + stdSharePercent);
+    this.sharePercStdLower.push(avgSharePercent - stdSharePercent);
+    this.breedAvgHistory.push(avgBreed);
+    this.shareAvgHistory.push(avgShare);
+    this.popHistory.push(popCount);
 
-    this.popHistory.push(this.agents.length);
-    if(this.agents.length > this.popMax) {
-        this.popMax = this.agents.length;
-    }
-    console.log(this.agents.length);
+    console.log(popCount);
+}
 
+Population.prototype.storeAll = function () {
     if(this.params.storeAll) {
+        var flatAgents = this.agents.map(function(agent) {
+            var flat = {
+                cH: agent.color.h,
+                cS: agent.color.s,
+                sP: agent.sharePercent,
+                sR: agent.shareRange,
+                bR: agent.breedRange
+            }
+            return flat;
+        });
+
         this.completeHistory.push(flatAgents);
+        
         if(socket && this.params.sendToDB) {
             var agentsData = {
                 id: this.id,
@@ -369,23 +439,24 @@ Population.prototype.saveStats = function () {
                 params: this.params,
                 agents: flatAgent
             }
-            socket.emit("somekey-agents", agentsData)
+            socket.emit("saveGS", agentsData)
         }
     }
 }
 
-Population.prototype.serialize = function () {
-    var text = JSON.stringify(this.params);
-
-    text += "\ntick,pop,sharePercentAvg,sharePercentMin,sharePercentMax,breedAvg,shareAvg\n";
-    for(var i = 0; i < this.popHistory.length; i++) {
+Population.prototype.serialize = function (skip) {
+    var text = "tick,popCount,sharePercentAvg,sharePercentMin,sharePercentMax,sharePercentMedian,sharePercentSD,breedAvg,shareAvg,popId\n";
+    for(var i = 0; i < this.popHistory.length; i += skip) {
         text += i + ",";
         text += this.popHistory[i] + ",";
         text += this.sharePercAvgHistory[i] + ",";
         text += this.sharePercMinHistory[i] + ",";
         text += this.sharePercMaxHistory[i] + ",";
+        text += this.sharePercMedHistory[i] + ",";
+        text += this.sharePercStdHistory[i] + ",";
         text += this.breedAvgHistory[i] + ",";
-        text += this.shareAvgHistory[i] + "\n";
+        text += this.shareAvgHistory[i] + ",";
+        text += this.id + "\n";
     }
 
     return text;
@@ -431,8 +502,11 @@ Population.prototype.draw = function (ctx) {
     ctx.fillStyle = "#eeeeee";
     ctx.fillRect(startX, startY, gWidth, gHeight);
     graph(ctx, this.sharePercMinHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "lightgreen");
-    graph(ctx, this.sharePercAvgHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "green", "Average");
+    graph(ctx, this.sharePercAvgHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "darkgreen", "Average");
+    graph(ctx, this.sharePercMedHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "red");
     graph(ctx, this.sharePercMaxHistory, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "lightgreen");
+    graph(ctx, this.sharePercStdUpper, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "lightgrey");
+    graph(ctx, this.sharePercStdLower, this.shareMax, this.params.graphDays, startX, startY, gWidth, gHeight, "lightgrey");
 
     //share/breed range graph
     startY = 320;
@@ -529,6 +603,7 @@ ASSET_MANAGER.downloadAll(function () {
         params.graphDays = parseInt(document.getElementById('graphDays').value);
         params.uniformForage = document.getElementById('uniformForage').checked;
         params.runName = document.getElementById('runName').value;
+        params.sampleDays = parseInt(document.getElementById('sampleDays').value);
         params.download = document.getElementById('download').checked;
         params.storeAll = document.getElementById('storeAll').checked;
         params.sendToDB = document.getElementById('sendToDB').checked;
