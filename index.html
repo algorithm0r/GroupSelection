@@ -5,8 +5,10 @@
     <meta charset="utf-8">
     <title>Group Selection</title>
     <link type="text/css" rel="stylesheet" href="./style.css">
+    <script type="text/javascript" src="http://24.16.255.56:8888/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="./assetmanager.js"></script>
     <script type="text/javascript" src="./gameengine.js"></script>
+    <script type="text/javascript" src="./experimentmanager.js"></script>
     <script type="text/javascript" src="./main.js"></script>
 </head>
 <body>
@@ -17,38 +19,41 @@
     <div id="controls">
         <div id="pop" class="params">
             <p>Population Parameters</p>
-            <input type="text" id="popId" value="" style="font-family: 'Courier New', Courier, monospace;" disabled/>ID<br />
-            <input type="text" id="mutStep" value="64" />Mutation Step<br />
-            <input type="text" id="mutRate" value="0.05" />Mutation Rate<br />
-            <input type="text" id="popStart" value="100" />Initial Population<br />
-            <input type="text" id="popMin" value="500" />Population Minimum<br />
-            <input type="text" id="popMultiplier" value="0.10" />Population Multiplier<br />
-            <input type="text" id="popDenominator" value="500" />Population Denominator<br />
-            <input type="text" id="maxBreed" value="8"/>Max Share<br />
-            <input type="text" id="maxShare" value="8"/>Max Breed<br />
-            <input type="text" id="sharePercentModifier" value="0.1" />Share Percent Mod<br />
-            <input type="checkbox" id="breedClosest" checked />Breed with closest<br />
+            <input type="text" id="popId" style="font-family: 'Courier New', Courier, monospace;" disabled/>ID<br />
+            <input type="text" id="mutStep" />Mutation Step<br />
+            <input type="text" id="mutRate" />Mutation Rate<br />
+            <input type="text" id="popStart" />Initial Population<br />
+            <input type="text" id="popMin" />Population Minimum<br />
+            <input type="text" id="popMultiplier" />Population Multiplier<br />
+            <input type="text" id="popDenominator" />Population Denominator<br />
+            <input type="text" id="maxShare" />Max Share<br />
+            <input type="text" id="maxBreed" />Max Breed<br />
+            <input type="text" id="sharePercentModifier" />Share Percent Mod<br />
+            <input type="checkbox" id="breedClosest" />Breed with closest<br />
             <input type="checkbox" id="shareWithSelfish" />Share with selfish<br />
             <input type="checkbox" id="uniformForage" />Uniform foraging<br />
             <input type="checkbox" id="mutateRanges" />Mutate breed/share range<br />
         </div>
         <div id="view" class="params">
             <p>View Parameters</p>
-            <input type="text" id="viewCountX" value="30" />Display Count X<br />
-            <input type="text" id="viewCountY" value="30" />Display Count Y<br />
-            <input type="text" id="viewAgentSize" value="24" />Agent Size<br />
-            <input type="text" id="graphDays" value="200" />Graph Length<br />
-            <input type="text" id="clockStep" value="0.1" />Clock Step<br />
-            <input type="checkbox" id="skipClock" checked />Skip Clock<br />
+            <input type="text" id="viewCountX" />Display Count X<br />
+            <input type="text" id="viewCountY" />Display Count Y<br />
+            <input type="text" id="viewAgentSize"  />Agent Size<br />
+            <input type="text" id="graphDays" />Graph Length<br />
+            <input type="text" id="clockStep" />Clock Step<br />
+            <input type="checkbox" id="skipClock" />Skip Clock<br />
         </div>
         <div id="log" class="params">
             <p>Data Logging</p>
-            <input type="text" id="maxDays" value="10000" />Run length<br />
-            <input type="text" id="runName" value="groupselection" />Run name <br />
-            <input type="text" id="sampleDays" value="50" />Sample days <br />
+            <input type="text" id="maxDays" />Run length<br />
+            <input type="text" id="runName" />Run name <br />
+            <input type="text" id="sampleDays" />Sample days <br />
             <input type="checkbox" id="storeAll"/>Save all agents (!)<br />
             <input type="checkbox" id="download"/>Download<br />
+            <input type="checkbox" id="sendToDB"/>Store in DB<br />
         </div><br />
+        <span id="tests"></span> <br />
+        <span id="runs"></span> <br />
         <div class="button" id="restart">Save &amp; Restart</div><br />
         <div class="button" id="play">>/||</div>
     </div>
