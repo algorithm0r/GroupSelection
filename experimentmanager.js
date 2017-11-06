@@ -33,32 +33,59 @@ var DEFAULT_PARAMS = {
 
 function ExperimentManager() {
     this.run = 0;
-    this.maxRuns = 2; //max runs per test
+    this.maxRuns = 10; //max runs per test
     this.currentTest = 0;
-    this.dataGroup = "DUMMY-DATA";
+    this.dataGroup = "TEST-GROUP1";
 
     //copy the default as test base for each test to run
     var tests = [];
-    for(var i = 0; i < 4; i++) {
+    for(var i = 0; i < 10; i++) {
         tests.push(Object.assign({}, DEFAULT_PARAMS));
     }
 
+    var num = 0;
     //test[0] is default
 
-    tests[1].runName = "highBreedShare"
-    tests[1].maxBreed = 64;
-    tests[1].maxShare = 64;
+    num++;
+    tests[num].runName = "step32"
+    tests[num].mutStep = 32;
 
-    tests[2].runName = "highShare"
-    tests[2].maxBreed = 8;
-    tests[2].maxShare = 64;
+    num++;
+    tests[num].runName = "step8"
+    tests[num].mutStep = 8;
 
-    tests[3].runName = "highBreed"
-    tests[3].maxBreed = 64;
-    tests[3].maxShare = 8;
+    num++;
+    tests[num].runName = "breedAndShare64"
+    tests[num].maxBreed = 64;
+    tests[num].maxShare = 64;
+
+    num++;
+    tests[num].runName = "share64"
+    tests[num].maxShare = 64;
+
+    num++;
+    tests[num].runName = "breed64"
+    tests[num].maxBreed = 64;
+
+    num++;
+    tests[num].runName = "shareSelfish"
+    tests[num].shareWithSelfish = true;
+
+    num++;
+    tests[num].runName = "uniformForage"
+    tests[num].uniformForage = true;
+
+    num++;
+    tests[num].runName = "selfishAndUniform"
+    tests[num].uniformForage = true;
+    tests[num].shareWithSelfish = true;
+
+    num++;
+    tests[num].runName = "breedRandom"
+    tests[num].breedClosest = false;
 
     //keep tests as an empty array if you want to play around with settings in UI
-    this.tests = [];
+    this.tests = tests;
     this.updateUI(DEFAULT_PARAMS);
 
 }
