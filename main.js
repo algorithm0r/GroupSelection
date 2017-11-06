@@ -330,7 +330,6 @@ Population.prototype.update = function () {
                             var newAgent = new Agent(this.game, 0, 0, this.params, agent, partner, this.params);
                         } else {
                             //breed with random possible
-                            console.log("POSSIBLE PARTNERS: " + partners.length);
                             var newAgent = new Agent(this.game, 0, 0, this.params, agent, partners[randomInt(partners.length)]);
                         }
                         offspring.push(newAgent);
