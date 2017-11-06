@@ -292,7 +292,6 @@ Population.prototype.update = function () {
                 // breed
                 var breeders = [];
                 var offspring = [];
-                var partners = [];
                 for (var i = 0; i < this.agents.length; i++) {
                     var agent = this.agents[i];
                     if (agent.food > 1) {
@@ -305,6 +304,7 @@ Population.prototype.update = function () {
                     var agent = breeders[i];
                     var bred = false;
                     var partner = null;
+                    var partners = [];
                     var diff = Number.MAX_SAFE_INTEGER;
 
                     for (var j = 0; j < breeders.length; j++) {
@@ -330,6 +330,7 @@ Population.prototype.update = function () {
                             var newAgent = new Agent(this.game, 0, 0, this.params, agent, partner, this.params);
                         } else {
                             //breed with random possible
+                            console.log("POSSIBLE PARTNERS: " + partners.length);
                             var newAgent = new Agent(this.game, 0, 0, this.params, agent, partners[randomInt(partners.length)]);
                         }
                         offspring.push(newAgent);
