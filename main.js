@@ -227,6 +227,7 @@ Population.prototype.update = function () {
                     dataGroup: this.dataGroup,
                     popId: this.id,
                     params: this.params,
+                    popCount: this.popHistory,
                     sharePercentsAvg: this.sharePercAvgHistory,
                     sharePercentsMin: this.sharePercMinHistory,
                     sharePercentsMax: this.sharePercMaxHistory,
