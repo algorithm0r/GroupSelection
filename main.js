@@ -283,7 +283,7 @@ Population.prototype.update = function () {
                         }
 
                         for (var j = 0; j < partners.length; j++) {
-                            partners[j].food += agent.sharePercent * agent.food / partners.length * 2;
+                            partners[j].food += agent.sharePercent * agent.food / partners.length * this.params.publicGoods;
                         }
                         agent.food -= agent.sharePercent * agent.food;
                     }
