@@ -5,6 +5,14 @@
     display:inline-block;
 }
 
+#graphs {
+    border: 1px solid black;
+    background-color: white;
+    float: left;
+    display:inline-block;
+    margin-right: 10px;
+}
+
 #controls {
     float: left;
 }
@@ -36,6 +44,12 @@
     border-color: purple;
     color: purple;
     background-color: mediumpurple;
+}
+
+#analyze {
+    border-color: darkred;
+    color: darkred;
+    background-color: pink;
 }
 
 div input {
