@@ -58,11 +58,11 @@ DataGraph.prototype.draw = function (ctx) {
         gWidth = 575;
         ctx.fillStyle = "#eeeeee";
         ctx.fillRect(startX, startY, gWidth, gHeight);
-        graph(ctx, this.data.popShareAvg, this.data.sharePercMaxMax, this.data.days, startX, startY, gWidth, gHeight, "darkblue");
-        graph(ctx, this.data.popShareMin, this.data.sharePercMaxMax, this.data.days, startX, startY, gWidth, gHeight, "lightblue");
-        graph(ctx, this.data.popShareMax, this.data.sharePercMaxMax, this.data.days, startX, startY, gWidth, gHeight, "lightblue");
-        graph(ctx, this.data.popShareStdUpper, this.data.sharePercMaxMax, this.data.days, startX, startY, gWidth, gHeight, "blue");
-        graph(ctx, this.data.popShareStdLower, this.data.sharePercMaxMax, this.data.days, startX, startY, gWidth, gHeight, "blue");
+        graph(ctx, this.data.popShareAvg, this.data.sharePercMaxMax, this.data.popCountMax, startX, startY, gWidth, gHeight, "darkblue");
+        graph(ctx, this.data.popShareMin, this.data.sharePercMaxMax, this.data.popCountMax, startX, startY, gWidth, gHeight, "lightblue");
+        graph(ctx, this.data.popShareMax, this.data.sharePercMaxMax, this.data.popCountMax, startX, startY, gWidth, gHeight, "lightblue");
+        graph(ctx, this.data.popShareStdUpper, this.data.sharePercMaxMax, this.data.popCountMax, startX, startY, gWidth, gHeight, "blue");
+        graph(ctx, this.data.popShareStdLower, this.data.sharePercMaxMax, this.data.popCountMax, startX, startY, gWidth, gHeight, "blue");
         labelGraph(ctx, this.data.sharePercMaxMax, this.data.popCountMax, startX, startY, gWidth, gHeight, "Share Percent by Population Count:")
 
         //text info
@@ -190,7 +190,7 @@ DataManager.prototype.avgRelate = function (arr1, arr2, max) {
 
     var result = [max];
     for(var i = 0; i < max; i++) {
-        var temp2 = temp.filter((obj) => { return obj.a1 == i; })
+        var temp2 = temp.filter((obj) => { return Math.round(obj.a1) == i; })
             .map((obj) => { return obj.a2 });
         var avg = average(temp2);
 
