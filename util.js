@@ -75,7 +75,7 @@ function average(data){
 }
 
 function graph(ctx, arr, max, count, x, y, width, height, style, text) {
-    if(text && arr.length <= 0) {
+    if(text && arr.length > 0) {
         ctx.fillStyle = "Black";
         var current = parseFloat(arr[arr.length - 1].toFixed(3));
         ctx.fillText(text + ": " + current + " Max: " + parseFloat(max.toFixed(3)), x, y + 10);
