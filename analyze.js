@@ -69,7 +69,7 @@ DataGraph.prototype.draw = function (ctx) {
         startX = 625;
         ctx.font="12px monospace";
         ctx.fillStyle = "Black";
-        ctx.fillText(this.data.popIds.length + " Runs queried", startX, startY + 10);
+        ctx.fillText(this.data.popIds.length + " Runs queried (only successful runs are graphed)", startX, startY + 10);
         var successPerc = ((this.data.successCount / this.data.popIds.length) * 100).toFixed(2);
         ctx.fillText("Successful Runs: " + this.data.successCount + "/" + this.data.popIds.length + " (" + successPerc + "%)", startX, startY + 25);
         ctx.fillText("IDs: " + this.data.popIds.join(", "), startX, startY + 40);
