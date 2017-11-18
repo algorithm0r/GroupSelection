@@ -502,14 +502,19 @@ ASSET_MANAGER.downloadAll(function () {
     newPopulation = newPop;
 
     var retryPop = function(retryCount) {
-        pop = new Population(
-            gameEngine,
-            expManager.retryParams(retryCount),
-            expManager.nextPopId(),
-            expManager.dataGroup
-        );
-        pop.retries = retryCount;
-        gameEngine.addEntity(pop);
+        //only retry if less than max
+        if(retryCount < expManager.retryMax) {
+            pop = new Population(
+                gameEngine,
+                expManager.retryParams(retryCount),
+                expManager.nextPopId(),
+                expManager.dataGroup
+            );
+            pop.retries = retryCount;
+            gameEngine.addEntity(pop);
+        } else {
+            newPopulation();
+        }
     }
     retryPopulation = retryPop;
 
