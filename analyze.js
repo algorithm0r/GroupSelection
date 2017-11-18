@@ -39,7 +39,7 @@ DataGraph.prototype.draw = function (ctx) {
         graph(ctx, this.data.sharePercMed, this.data.sharePercMaxMax, this.data.days, startX, startY, gWidth, gHeight, "red");
         graph(ctx, this.data.sharePercStdUpper, this.data.sharePercMaxMax, this.data.days, startX, startY, gWidth, gHeight, "green");
         graph(ctx, this.data.sharePercStdLower, this.data.sharePercMaxMax, this.data.days, startX, startY, gWidth, gHeight, "green");
-        graph(ctx, this.data.sharePercAvg, this.data.sharePercMaxMax, this.data.days, startX, startY, gWidth, gHeight, "darkgreen");
+        graph(ctx, this.data.sharePercAvg, this.data.sharePercMaxMax, this.data.days, startX, startY, gWidth, gHeight, "black");
         labelGraph(ctx, this.data.sharePercMaxMax, this.data.days, startX, startY, gWidth, gHeight, "Share Percent By Generation:")
 
         //breed/share graph
@@ -70,7 +70,9 @@ DataGraph.prototype.draw = function (ctx) {
         ctx.font="12px monospace";
         ctx.fillStyle = "Black";
         ctx.fillText(this.data.popIds.length + " Runs queried", startX, startY + 10);
-        ctx.fillText("IDs: " + this.data.popIds.join(", "), startX, startY + 25);
+        var successPerc = ((this.data.successCount / this.data.popIds.length) * 100).toFixed(2);
+        ctx.fillText("Successful Runs: " + this.data.successCount + "/" + this.data.popIds.length + " (" + successPerc + "%)", startX, startY + 25);
+        ctx.fillText("IDs: " + this.data.popIds.join(", "), startX, startY + 40);
 
         //draw mouse drawCursor to compare graphs
         ctx.fillStyle = "rgba(0,0,0,0.3)";
@@ -85,6 +87,7 @@ DataGraph.prototype.draw = function (ctx) {
 function DataManager(graphs) {
     this.graphs = graphs;
     this.data;
+    this.successUndef = false;
 }
 
 DataManager.prototype.import = function (dataArr) {
@@ -108,7 +111,8 @@ DataManager.prototype.import = function (dataArr) {
         sharePercStdLower: [],
         breedAvgMax: 0,
         shareAvgMax: 0,
-        sharePercMaxMax: 0
+        sharePercMaxMax: 0,
+        successCount: 0
     };
 
     var maxDays = 0;
@@ -120,6 +124,13 @@ DataManager.prototype.import = function (dataArr) {
         data.params.push(dataArr[i].params);
     }
     data.days = maxDays;
+
+    //only graph successful arrays
+    var successUndef = this.successUndef;
+    var successArr = dataArr.filter((obj) => {
+        return obj.successful || (obj.successful == undefined && successUndef);
+    })
+    data.successCount = successArr.length;
 
     //average all the arrays
     for (var i = 0; i < maxDays; i++) {
@@ -133,16 +144,16 @@ DataManager.prototype.import = function (dataArr) {
         var spMed = 0;
         var spStd = 0;
 
-        for(var k = 0; k < dataArr.length; k++) {
-            if(i < dataArr[k].breedAvg.length) {
-                if(dataArr[k].popCount) pop += dataArr[k].popCount[i];
-                bAvg += dataArr[k].breedAvg[i];
-                sAvg += dataArr[k].shareAvg[i];
-                spAvg += dataArr[k].sharePercentsAvg[i];
-                spMin += dataArr[k].sharePercentsMin[i];
-                spMax += dataArr[k].sharePercentsMax[i];
-                spMed += dataArr[k].sharePercentsMed[i];
-                spStd += dataArr[k].sharePercentsStd[i];
+        for(var k = 0; k < successArr.length; k++) {
+            if(i < successArr[k].breedAvg.length) {
+                if(successArr[k].popCount) pop += successArr[k].popCount[i];
+                bAvg += successArr[k].breedAvg[i];
+                sAvg += successArr[k].shareAvg[i];
+                spAvg += successArr[k].sharePercentsAvg[i];
+                spMin += successArr[k].sharePercentsMin[i];
+                spMax += successArr[k].sharePercentsMax[i];
+                spMed += successArr[k].sharePercentsMed[i];
+                spStd += successArr[k].sharePercentsStd[i];
                 count++;
             }
         }
@@ -188,6 +199,7 @@ DataManager.prototype.avgRelate = function (arr1, arr2, max) {
         }
     });
 
+    max = max + 1;
     var result = [max];
     for(var i = 0; i < max; i++) {
         var temp2 = temp.filter((obj) => { return Math.round(obj.a1) == i; })
@@ -247,6 +259,7 @@ ASSET_MANAGER.downloadAll(function () {
 
     var updateGraphs = function() {
         dataManager.clear();
+        dataManager.successUndef = document.getElementById('successUndef').checked;
         var group = document.getElementById('group').value;
         var name = document.getElementById('name').value;
         socket.emit("loadGS", {dataGroup: group, "params.runName": name});

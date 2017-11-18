@@ -46,7 +46,7 @@ function ExperimentManager() {
 
     var num = 0;
 
-    tests[num].runName = "mightfail"
+    tests[num].runName = "mightfail2"
     tests[num].publicGoods = 1.1;
 
     num++;
