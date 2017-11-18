@@ -6,8 +6,13 @@ var DEFAULT_PARAMS = {
     publicGoods: 2,
     sharePercentModifier: 0.1,
     breedClosest: true,
+<<<<<<< Updated upstream
     shareWithSelfish: false,
     uniformForage: false,
+=======
+    shareWithSelfish: true,
+    uniformForage: true,
+>>>>>>> Stashed changes
     mutateRanges: false,
 
     popDenominator: 400,
@@ -37,24 +42,16 @@ function ExperimentManager() {
     this.maxRuns = 10; //max runs per test
     this.currentTest = 0;
     this.dataGroup = "DUMMY-DATA";
+    this.retryMax = 3;
 
     //copy the default as test base for each test to run
     var tests = [];
-    for(var i = 0; i < 2; i++) {
+    for(var i = 0; i < 17; i++) {
         tests.push(Object.assign({}, DEFAULT_PARAMS));
     }
 
-    var num = 0;
-
-    tests[num].runName = "mightfail2"
-    tests[num].publicGoods = 1.1;
-
-    num++;
-    tests[num].runName = "pass"
-    tests[num].publicGoods = 2;
-
     //keep tests as an empty array if you want to play around with settings in UI
-    this.tests = tests;
+    this.tests = [];
     this.updateUI(DEFAULT_PARAMS);
 
 }
@@ -73,7 +70,7 @@ ExperimentManager.prototype.nextParams = function () {
     }
 
     this.run++;
-    this.updateUI(newParams);
+    this.updateUI(newParams, 1);
     return newParams;
 };
 
@@ -90,7 +87,7 @@ ExperimentManager.prototype.retryParams = function (retryCount) {
         }
     }
 
-    this.updateUI(newParams, "Retry: " + retryCount);
+    this.updateUI(newParams, retryCount + 1);
     return newParams;
 };
 
@@ -139,11 +136,11 @@ ExperimentManager.prototype.getFromUI = function () {
     return params;
 };
 
-ExperimentManager.prototype.updateUI = function (params, message) {
+ExperimentManager.prototype.updateUI = function (params, attempt) {
     var disableControls = this.tests.length;
     document.getElementById("tests").innerHTML = "Test: " + (this.currentTest + 1) + "/" + this.tests.length;
     document.getElementById("runs").innerHTML = "Run: " + this.run + "/" + (this.tests.length * this.maxRuns);
-    if(message) document.getElementById("message").innerHTML = message;
+    if(attempt) document.getElementById("message").innerHTML = "Attempt: " + attempt + "/" + this.retryMax;
 
     Object.keys(params).forEach(function(key,index) {
         // key: the name of the object key
