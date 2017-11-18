@@ -110,6 +110,8 @@ function Population(game, params, id, dataGroup) {
     this.completeHistory = [];
     this.popMax = 0;
     this.day = 0;
+    this.retries = 0;
+    this.sucessful = false;
 
     for (var i = 0; i < this.params.popStart; i++) {
         this.agents.push(new Agent(game, 0, 0, this.params));
@@ -147,11 +149,16 @@ Population.prototype.update = function () {
         if(this.day > this.params.maxDays  || this.agents.length === 0) {
             console.log("Simulation complete after " + this.day + "/" + this.params.maxDays + " days");
 
+            if(this.agents.length != 0 && this.day >= this.params.maxDays) {
+                this.successful = true;
+            }
+
             if(socket && this.params.sendToDB) {
                 var runStats = {
                     dataGroup: this.dataGroup,
                     popId: this.id,
                     params: this.params,
+                    successful: this.successful,
                     popCount: this.popHistory,
                     sharePercentsAvg: this.sharePercAvgHistory,
                     sharePercentsMin: this.sharePercMinHistory,
@@ -180,10 +187,17 @@ Population.prototype.update = function () {
                     download(filename + "-all.json", JSON.stringify(dto));
                 }
             }
-            console.log("Creating new population");
 
-            this.removeFromWorld = true;
-            newPopulation();
+            //restart or retry pops
+            if(this.successful) {
+                console.log("Creating new population");
+                this.removeFromWorld = true;
+                newPopulation();
+            } else {
+                console.log("Population died too quickly. Retrying");
+                this.removeFromWorld = true;
+                retryPopulation(this.retries + 1);
+            }
         }
 
         // feed
@@ -464,6 +478,7 @@ if (window.io !== undefined) {
 }
 
 var newPopulation;
+var retryPopulation;
 
 ASSET_MANAGER.downloadAll(function () {
     console.log("starting up da sheild");
@@ -485,6 +500,18 @@ ASSET_MANAGER.downloadAll(function () {
         gameEngine.addEntity(pop);
     }
     newPopulation = newPop;
+
+    var retryPop = function(retryCount) {
+        pop = new Population(
+            gameEngine,
+            expManager.retryParams(retryCount),
+            expManager.nextPopId(),
+            expManager.dataGroup
+        );
+        pop.retries = retryCount;
+        gameEngine.addEntity(pop);
+    }
+    retryPopulation = retryPop;
 
     play.onclick = function () {
         pop.params.pause = !pop.params.pause;

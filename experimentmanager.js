@@ -36,62 +36,22 @@ function ExperimentManager() {
     this.run = 0;
     this.maxRuns = 10; //max runs per test
     this.currentTest = 0;
-    this.dataGroup = "TEST-GROUP2";
+    this.dataGroup = "DUMMY-DATA";
 
     //copy the default as test base for each test to run
     var tests = [];
-    for(var i = 0; i < 12; i++) {
+    for(var i = 0; i < 2; i++) {
         tests.push(Object.assign({}, DEFAULT_PARAMS));
     }
 
     var num = 0;
-    //test[0] is default
+
+    tests[num].runName = "mightfail2"
+    tests[num].publicGoods = 1.1;
 
     num++;
-    tests[num].runName = "step8"
-    tests[num].mutStep = 8;
-
-    num++;
-    tests[num].runName = "step4"
-    tests[num].mutStep = 4;
-
-    num++;
-    tests[num].runName = "breedAndShare64"
-    tests[num].maxBreed = 32;
-    tests[num].maxShare = 32;
-
-    num++;
-    tests[num].runName = "share32"
-    tests[num].maxShare = 32;
-
-    num++;
-    tests[num].runName = "breed32"
-    tests[num].maxBreed = 32;
-
-    num++;
-    tests[num].runName = "shareSelfish"
-    tests[num].shareWithSelfish = true;
-
-    num++;
-    tests[num].runName = "uniformForage"
-    tests[num].uniformForage = true;
-
-    num++;
-    tests[num].runName = "selfishAndUniform"
-    tests[num].uniformForage = true;
-    tests[num].shareWithSelfish = true;
-
-    num++;
-    tests[num].runName = "breedRandom"
-    tests[num].breedClosest = false;
-
-    num++;
-    tests[num].runName = "publicGoods12"
-    tests[num].publicGoods = 1.2;
-
-    num++;
-    tests[num].runName = "publicGoods15"
-    tests[num].publicGoods = 1.5;
+    tests[num].runName = "pass"
+    tests[num].publicGoods = 2;
 
     //keep tests as an empty array if you want to play around with settings in UI
     this.tests = tests;
@@ -114,6 +74,23 @@ ExperimentManager.prototype.nextParams = function () {
 
     this.run++;
     this.updateUI(newParams);
+    return newParams;
+};
+
+ExperimentManager.prototype.retryParams = function (retryCount) {
+    var newParams;
+    if(this.tests.length == 0) {
+        newParams = this.getFromUI();
+    } else {
+        this.currentTest = (this.run -1 ) % this.tests.length;
+        newParams = this.tests[this.currentTest];
+
+        if(this.run > (this.maxRuns * this.tests.length) - 1 ) {
+            newParams.pause = true;
+        }
+    }
+
+    this.updateUI(newParams, "Retry: " + retryCount);
     return newParams;
 };
 
@@ -162,20 +139,21 @@ ExperimentManager.prototype.getFromUI = function () {
     return params;
 };
 
-ExperimentManager.prototype.updateUI = function (p) {
+ExperimentManager.prototype.updateUI = function (params, message) {
     var disableControls = this.tests.length;
     document.getElementById("tests").innerHTML = "Test: " + (this.currentTest + 1) + "/" + this.tests.length;
     document.getElementById("runs").innerHTML = "Run: " + this.run + "/" + (this.tests.length * this.maxRuns);
+    if(message) document.getElementById("message").innerHTML = message;
 
-    Object.keys(p).forEach(function(key,index) {
+    Object.keys(params).forEach(function(key,index) {
         // key: the name of the object key
         // index: the ordinal position of the key within the object
         var element = document.getElementById(key);
         if(element) {
             if(element.type == "checkbox") {
-                element.checked = p[key];
+                element.checked = params[key];
             } else {
-                element.value = p[key];
+                element.value = params[key];
             }
             element.disabled = disableControls;
         }
